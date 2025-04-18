@@ -1,0 +1,52 @@
+services:
+  broker:
+    container_name: registry-broker
+    image: "bitnami/rabbitmq:3.13.3"
+    ports:
+      - "1883:1883" # MQTT port
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Web UI
+    environment:
+      # full list of env variables available at https://github.com/bitnami/containers/blob/main/bitnami/rabbitmq/README.md
+      RABBITMQ_PLUGINS: "rabbitmq_management rabbitmq_mqtt"
+      RABBITMQ_USERNAME: "intersect_username"
+      RABBITMQ_PASSWORD: "intersect_password"
+      RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS: "yes"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 10s
+    networks:
+      - intersect_registry_network
+  database:
+    container_name: registry-database
+    image: "bitnami/postgresql:17"
+    # full list of environment variables available at https://github.com/bitnami/containers/tree/231cb510c9f39dc7100d2a0c117beaef007f5fac/bitnami/postgresql#environment-variables
+    environment:
+      POSTGRESQL_USERNAME: "registry_username"
+      POSTGRESQL_PASSWORD: "registry_password"
+      POSTGRESQL_DATABASE: "registry"
+    healthcheck:
+      test: pg_isready -U $POSTGRESQL_USERNAME -d $POSTGRESQL_DATABASE
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 10s      
+    ports:
+      - 5432:5432
+    volumes:
+      - 'intersect_registry_postgresql_data:/bitnami/postgresql'
+    networks:
+      - intersect_registry_network
+
+# Define a network, which allows containers to communicate
+# with each other, by using their container name as a hostname
+networks:
+  intersect_registry_network:
+    driver: bridge
+
+volumes:
+  intersect_registry_postgresql_data:
+    driver: local

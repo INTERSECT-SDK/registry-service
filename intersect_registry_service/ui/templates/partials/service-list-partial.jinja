@@ -1,0 +1,7 @@
+{% for service in services %}
+<tr>
+  <td>{{service.service_name}}</td>
+  <td>{{service.last_modified.strftime('%Y-%m-%d %-I:%M %p (UTC)')}}</td>
+  <td>{{service.api_key}}</td>
+</tr>
+{% endfor %}

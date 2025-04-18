@@ -1,0 +1,7 @@
+{% if invalid_service %}
+<p class="error">
+  Service "<i>{{invalid_service}}</i>" has been taken.
+</p>
+{% elif server_error_service %}
+<p class="error">Unable to add service "<i>{{server_error_service}}</i>", please try again later.</p>
+{% endif %}
