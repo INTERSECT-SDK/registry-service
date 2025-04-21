@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
@@ -71,12 +71,8 @@ if settings.DEVELOPMENT_API_KEY:
         response_model=IntersectConfig,
     )
     async def debug_service_config(
-        req: Request,
+        api_key: Annotated[str, Header(alias='Authorization')],
     ) -> IntersectConfig:
-        api_key = req.headers.get('Authorization')
-        if not api_key:
-            raise HTTPException(status_code=422, detail='Missing API key in Authorization header')
-
         if api_key != settings.DEVELOPMENT_API_KEY:
             raise HTTPException(status_code=422, detail='Invalid API key in Authorization header')
 
@@ -100,10 +96,9 @@ if settings.DEVELOPMENT_API_KEY:
         response_description='The response type used by INTERSECT-SDK Clients to understand how to connect to the INTERSECT ecosystem.',
         response_model=IntersectClientConfig,
     )
-    async def client_config_debug(req: Request) -> IntersectClientConfig:
-        api_key = req.headers.get('Authorization')
-        if not api_key:
-            raise HTTPException(status_code=422, detail='Missing API key in Authorization header')
+    async def client_config_debug(
+        api_key: Annotated[str, Header(alias='Authorization')],
+    ) -> IntersectClientConfig:
         if api_key != settings.BROKER_CLIENT_API_KEY:
             raise HTTPException(status_code=422, detail='Invalid API key in Authorization header')
 
@@ -132,12 +127,10 @@ else:
         response_model=IntersectConfig,
     )
     async def service_config(
-        req: Request, service_name: Annotated[str, Query(min_length=3, max_length=63)]
+        req: Request,
+        service_name: Annotated[str, Query(min_length=3, max_length=63)],
+        api_key: Annotated[str, Header(alias='Authorization')],
     ) -> IntersectConfig:
-        api_key = req.headers.get('Authorization')
-        if not api_key:
-            raise HTTPException(status_code=422, detail='Missing API key in Authorization header')
-
         with Session(req.app.state.db) as session:
             statement = (
                 select(Service)
@@ -169,10 +162,9 @@ else:
         response_description='The response type used by INTERSECT-SDK Clients to understand how to connect to the INTERSECT ecosystem.',
         response_model=IntersectClientConfig,
     )
-    async def client_config(req: Request) -> IntersectClientConfig:
-        api_key = req.headers.get('Authorization')
-        if not api_key:
-            raise HTTPException(status_code=422, detail='Missing API key in Authorization header')
+    async def client_config(
+        api_key: Annotated[str, Header(alias='Authorization')],
+    ) -> IntersectClientConfig:
         if api_key != settings.BROKER_CLIENT_API_KEY:
             raise HTTPException(status_code=422, detail='Invalid API key in Authorization header')
 

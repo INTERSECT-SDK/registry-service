@@ -80,17 +80,6 @@ app.add_exception_handler(CsrfProtectError, csrf_protect_exception_handler)
 # make sure this is the LAST exception handler you add
 app.add_exception_handler(Exception, catch_exceptions_middleware)
 
-if settings.CORS_ORIGINS:
-    from fastapi.middleware.cors import CORSMiddleware
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=['*'],
-        allow_headers=['*'],
-    )
-
 # routes
 app.include_router(api_router)
 if settings.DEVELOPMENT_API_KEY:

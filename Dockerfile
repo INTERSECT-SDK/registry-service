@@ -19,12 +19,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --no-dev --frozen --no-install-project --no-editable
+    uv sync --no-dev --frozen --locked --no-install-project --no-editable
 
 # Sync the project
 COPY intersect_registry_service intersect_registry_service
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --frozen --no-editable
+    uv sync --no-dev --frozen --locked --no-editable
 
 FROM base AS final
 

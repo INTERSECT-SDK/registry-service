@@ -50,9 +50,6 @@ class Settings(BaseSettings):
     The secret name should NOT be shared with ANYONE. This is for registry service internals, it should not propagate beyond this application.
     """
 
-    # as an environment variable, represent this as JSON, i.e. '["*"]'
-    CORS_ORIGINS: list[str] = ['*']
-
     SYSTEM_NAME: str = Field(min_length=3, pattern=HIERARCHY_REGEX)
     """
     The System name is used as part of how INTERSECT clients know who to connect to, and can be shared with anyone.
