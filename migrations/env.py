@@ -10,12 +10,13 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
+process_wants_logging = config.get_main_option('process_wants_logging', 'true').lower().strip()
+if config.config_file_name is not None and process_wants_logging == 'true':
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from intersect_registry_service.models import *  # noqa: E402, F403 (fairly standard Alembic setup, may want to directly import any models with "table=True")
+from intersect_registry_service.app.models import *  # noqa: E402, F403 (fairly standard Alembic setup, may want to directly import any models with "table=True")
 
 target_metadata = SQLModel.metadata
 

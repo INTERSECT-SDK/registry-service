@@ -1,0 +1,9 @@
+{% if svc %}
+  {% if err %}
+  <p class="error">Unable to add service "<i>{{svc}}</i>", please try again later.</p>
+  {% else %}
+  <p class="error">
+    Service "<i>{{svc}}</i>" has been taken.
+  </p>
+  {% endif %}
+{% endif %}

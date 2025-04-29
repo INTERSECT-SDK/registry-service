@@ -36,5 +36,5 @@ COPY intersect_registry_service intersect_registry_service
 
 # override CMD at container runtime for tests
 # note that you generally will NOT want to set UVICORN_WORKERS if running in a Kubernetes cluster, let Kubernetes handle that for you
-CMD ["sh", "-c", "fastapi run intersect_registry_service/main.py --workers ${UVICORN_WORKERS:-1}"]
+CMD ["python", "-m", "intersect_registry_service"]
 

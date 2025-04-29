@@ -10,15 +10,20 @@ requires-python = ">=3.12,<4.0"
 #license = { text = "BSD-3-Clause" }
 dependencies = [
     "alembic>=1.15.2",
+    "asgi-correlation-id>=4.3.4",
+    "fastapi>=0.115.12",
     "fastapi-csrf-protect>=1.0.2",
     "fastapi-login>=1.10.3",
-    "fastapi[standard]>=0.115.12",
+    "jinja2>=3.1.6",
     "minio>=7.2.15",
     "paho-mqtt>=2.1.0",
     "pika>=1.3.2",
     "psycopg[binary]>=3.2.6",
     "pydantic-settings>=2.8.1",
+    "python-multipart>=0.0.20",
     "sqlmodel>=0.0.24",
+    "structlog>=25.2.0",
+    "uvicorn[standard]>=0.34.2",
 ]
 
 [build-system]
@@ -103,6 +108,9 @@ ignore = [
 'docs/*' = [
     'D',      # the documentation folder does not need documentation
     'INP001', # docs are not a namespace package
+]
+'intersect_registry_service/app/*' = [
+    'INP001', # not a namespace package
 ]
 'migrations/*' = [
     'INP001', # implicit namespace package OK

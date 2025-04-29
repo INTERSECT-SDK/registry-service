@@ -55,9 +55,9 @@ Make sure you have UV installed ([Instructions](https://docs.astral.sh/uv/#insta
 ### Running
 
 - `docker compose up -d` - spins up the database and brokers
-- `uv run fastapi dev intersect_registry_service/main.py`
+- `uv run python -m intersect_registry_service`
 
-Application runs on port 8000 unless you provide a `--port` option
+Application runs on port 8000 unless you set `SERVER_PORT`
 
 ### Important configuration variables
 
