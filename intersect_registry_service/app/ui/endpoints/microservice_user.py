@@ -55,8 +55,8 @@ async def microservice_user_page(
             'system_name': settings.SYSTEM_NAME,
             'client_api_key': settings.BROKER_CLIENT_API_KEY,
             'services': results,
-            'invalid_service': invalid_service,
-            'server_fault': server_fault,
+            'svc': invalid_service,
+            'err': server_fault,
         },
         headers=headers,
     )
