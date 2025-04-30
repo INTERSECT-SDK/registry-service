@@ -8,7 +8,7 @@ router = APIRouter()
     '/ping',
     tags=['Ping'],
     description='Application ping',
-    response_description=('empty response, 200 if able to execute and 5xx if not'),
+    response_description=('empty response, 204 if able to execute and 5xx if not'),
 )
 async def ping() -> Response:
     """rudimentary ping"""

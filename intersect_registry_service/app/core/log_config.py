@@ -38,7 +38,7 @@ def _use_bunyan_structure(_: Any, _name: str, event_dict: EventDict) -> EventDic
     event_dict['msg'] = event_dict.pop('event')
     event_dict['v'] = 0
     event_dict['pid'] = os.getpid()
-    event_dict['port'] = platform.node()
+    event_dict['hostname'] = platform.node()
     event_dict['level'] = _BUNYAN_LOG_LEVELS[event_dict['level']]
     return event_dict
 
