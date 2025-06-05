@@ -17,7 +17,6 @@ from .auth.session import IntersectNotAuthenticatedError, handle_unauthenticated
 from .core.configuration_manager import ConfigurationManager
 from .core.environment import settings
 from .core.log_config import logger, setup_logging
-from .core.run_migrations import run_migrations
 from .middlewares.logging_context import add_logging_middleware
 from .ui import router as ui_router
 
@@ -34,10 +33,8 @@ async def lifespan(app: FastAPI) -> typing.AsyncGenerator[None, None]:
         settings.postgres_url,
         pool_recycle=3600,
     )
-    if settings.ALEMBIC_RUN_MIGRATIONS:
-        logger.info('Running migration scripts.')
-        run_migrations()
-    elif not settings.DEVELOPMENT_API_KEY:
+    if not settings.ALEMBIC_RUN_MIGRATIONS and not settings.DEVELOPMENT_API_KEY:
+        # we have not yet checked the DB connection, but need to
         logger.warning(
             'Skipping migration scripts and verifying connection. Be advised that this should only be a temporary workaround, and that ALEMBIC_RUN_MIGRATIONS should be set to True for general use cases.'
         )

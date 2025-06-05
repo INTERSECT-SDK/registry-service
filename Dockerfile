@@ -1,38 +1,43 @@
-# see https://docs.astral.sh/uv/guides/integration/docker/#optimizations
+# see https://docs.astral.sh/uv/guides/integration/docker/#optimizations and https://www.joshkasuboski.com/posts/distroless-python-uv/
 
-ARG REPO=
-FROM ${REPO}python:3.12-slim AS base
+FROM ghcr.io/astral-sh/uv:debian-slim AS builder
 
-WORKDIR /app
-
-# don't allow python to buffer stdin/stdout
-ENV PYTHONUNBUFFERED=1
-ENV PATH="/app/.venv/bin:$PATH"
-
-FROM base AS builder
+ARG PYTHON_VERSION=3.12
 
 ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_INSTALL_DIR=/python
+ENV UV_PYTHON_PREFERENCE=only-managed
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN uv python install ${PYTHON_VERSION}
+
+WORKDIR /app
 
 # Install (required) dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --no-dev --frozen --locked --no-install-project --no-editable
+    uv sync --no-dev --frozen --no-install-project --no-editable
 
 # Sync the project
-COPY intersect_registry_service intersect_registry_service
+COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --frozen --locked --no-editable
+    uv sync --no-dev --frozen --no-editable
 
-FROM base AS final
+FROM gcr.io/distroless/cc:nonroot AS runner
 
+COPY --from=builder --chown=python:python /python /python
+
+WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 
+ENV PATH="/app/.venv/bin:$PATH"
+
+# application always assumes file paths after ROOT_DIR is defined
 COPY migrations migrations
 COPY alembic.ini alembic.ini
-COPY intersect_registry_service intersect_registry_service
+# do NOT override this ENV variable unless you are mounting your own migrations + alembic.ini at runtime
+ENV ROOT_DIR="/app"
 
 # override CMD at container runtime for tests
 # note that you generally will NOT want to set UVICORN_WORKERS if running in a Kubernetes cluster, let Kubernetes handle that for you

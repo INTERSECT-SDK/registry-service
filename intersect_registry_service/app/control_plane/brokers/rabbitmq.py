@@ -44,7 +44,6 @@ class RabbitMQHandler(AbstractBrokerHandler):
         self.http_client = urllib3.PoolManager(
             headers=self.base_headers,
         )
-        self.initialize_broker(settings.BROKER_CLIENT_USERNAME, settings.BROKER_CLIENT_PASSWORD)
 
     def initialize_broker(self, client_username: str, client_password: str) -> None:
         """TODO - this should happen entirely on the BROKER
@@ -112,7 +111,7 @@ class RabbitMQHandler(AbstractBrokerHandler):
             f'{self._base_url}api/users/{username}',
             f'{{"password":"{password}","tags":[]}}',
         )
-        logger.debug(resp.status, resp.headers, resp.data)
+        logger.debug('%s %s %s', resp.status, resp.headers, resp.data)
         if resp.status >= 400:
             msg = f'Could not initialize the service broker user for {service_name}'
             logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
@@ -132,7 +131,7 @@ class RabbitMQHandler(AbstractBrokerHandler):
                 body,
                 headers={**self.base_headers, 'Content-Type': 'application/json'},
             )
-            logger.debug(resp.status, resp.headers, resp.data)
+            logger.debug('%s %s %s', resp.status, resp.headers, resp.data)
             if resp.status >= 400:
                 msg = f'Could not set permissions for the service broker user {service_name}'
                 logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)

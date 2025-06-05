@@ -59,7 +59,6 @@ class Amqp091ProtocolHander(AbstractProtocolHandler):
             connection_attempts=3,
             ssl_options=ssl_options,
         )
-        self.initialize_broker()
 
     def initialize_broker(self) -> None:
         """

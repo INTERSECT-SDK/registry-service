@@ -1,4 +1,5 @@
 from functools import cached_property
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import BeforeValidator, Field, HttpUrl, PositiveInt
@@ -44,11 +45,18 @@ class Settings(BaseSettings):
     SERVER_PORT: PositiveInt = 8000
     """The port Uvicorn will try to run on"""
     SERVER_WORKERS: PositiveInt = 1
-    """Configuration for Uvicorn, do not set to above 1 unless PRODUCTION is True (more specifically: uvicorn reload)"""
+    """Number of workers for Uvicorn."""
     BASE_URL: StripTrailingSlash = ''
     """Set this to '' if this is not behind a proxy, set this to your proxy's path if this is behind a proxy.
     
+    Do not include the full URI, only include the path component.
+    """
+    ROOT_DIR: Path = Field(default=Path(__file__).parents[3].absolute())
+    """The directory to where we execute the script from, mostly to point to shared files. This should ALWAYS be an absolute path.
+
+    'Shared files' currently comprises just the migration scripts (always called 'migrations') and alembic.ini . For simplicity's sakes, the files are always assumed to have the same names from the root directory.
     
+    This doesn't need to be changed while developing. It should be set for you automatically in Docker. If running this via an init system like systemd, you'll need to manually set up a directory.
     """
 
     DEVELOPMENT_API_KEY: str = ''
@@ -82,7 +90,7 @@ class Settings(BaseSettings):
 
     # TODO - should allow for multiple brokers levels eventually.
     BROKER_HOST: str
-    BROKER_PORT: PositiveInt | None
+    BROKER_PORT: PositiveInt
     BROKER_PROTOCOL: BrokerProtocol
     """The protocol includes version information and will be used directly by Clients"""
     BROKER_APPLICATION: Literal['rabbitmq']

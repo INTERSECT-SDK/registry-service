@@ -1,14 +1,17 @@
 import structlog
 import uvicorn
 
+from intersect_registry_service.app.core.configuration_manager import ConfigurationManager
 from intersect_registry_service.app.core.environment import settings
 from intersect_registry_service.app.core.log_config import setup_logging
+from intersect_registry_service.app.core.run_migrations import run_migrations
 
 logger = structlog.stdlib.get_logger('intersect-registry-service.main')
 
 
 def main() -> None:
-    # WARNING - the logger names will NOT propogate to workers if uvicorn.reload = True
+    # WARNING - the logger names will NOT propogate to workers if uvicorn.reload = True or uvicorn.server_workers > 1
+    # so we should setup logging twice - once on the uvicorn main, and once in the runner
     setup_logging()
 
     host = '0.0.0.0' if settings.PRODUCTION else '127.0.0.1'  # noqa: S104 (mandatory if running in Docker)
@@ -16,13 +19,23 @@ def main() -> None:
     if settings.PRODUCTION:
         logger.info('Running server at %s', url)
     else:
-        logger.info('Running DEVELOPMENT server at %s, server will reload on file changes', url)
+        reload_str = ', server will reload on file changes' if settings.SERVER_WORKERS == 1 else ''
+        logger.info('Running DEVELOPMENT server at %s%s', url, reload_str)
         logger.info('View docs at %s/docs', url)
 
     if settings.DEVELOPMENT_API_KEY:
         logger.warning(
             'WARNING: DEVELOPMENT_API_KEY was set to a non-empty value, running in Developer Mode. Do NOT use this on a remote server.'
         )
+
+    # initialize backing services
+    if settings.ALEMBIC_RUN_MIGRATIONS:
+        logger.info('Running migration scripts.')
+        run_migrations()
+
+    # TODO remove this block once we start initializing this directly on the brokers
+    config_manager = ConfigurationManager(settings)
+    config_manager.initialize_broker(settings)
 
     uvicorn.run(
         'intersect_registry_service.app.main:app',
