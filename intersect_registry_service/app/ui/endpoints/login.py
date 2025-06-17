@@ -7,7 +7,6 @@ from fastapi_csrf_protect import CsrfProtect
 from ...auth.impl import get_user
 from ...auth.session import LOGIN_URL, session_manager
 from ...auth.user import USER
-from ...core.log_config import logger
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
 from ...utils.htmx import is_htmx_request
 from ..templating import TEMPLATES
@@ -23,7 +22,6 @@ async def login_page(
     username: str | None = Query(''),
     err: str | None = Query(''),
 ) -> HTMLResponse:
-    logger.debug('hello from structlog')
     if user is not None:
         return RedirectResponse(request.url_for('microservice_user_page'))  # type: ignore[return-value]
 

@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from ...core.environment import settings
+from ..session import session_manager
 from ..user import USER
 
 get_user: Callable[[str], USER | None] = None  # type: ignore[assignment]
@@ -16,3 +17,5 @@ else:
     from .rudimentary import get_user_impl
 
     get_user = get_user_impl
+
+session_manager.user_loader()(get_user)
