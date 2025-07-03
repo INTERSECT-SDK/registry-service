@@ -12,7 +12,9 @@ For the rudimentary approach, it's returning the username and the password, thou
 """
 
 if settings.AUTH_IMPLEMENTATION == 'keycloak':
-    raise NotImplementedError
+    from .keycloak import get_user_impl
+
+    get_user = get_user_impl
 else:
     from .rudimentary import get_user_impl
 

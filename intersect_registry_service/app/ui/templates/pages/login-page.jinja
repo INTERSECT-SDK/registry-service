@@ -8,14 +8,8 @@
     <span id="login-form-errors">
       {% include 'login-page-error-partial.jinja' %}
     </span>
-    <label for="username"> Username</label>
-    <input type="text" id="login-username" name="username" placeholder="Enter your Username" value="{{username}}"
-      required />
+    <a hx-boost="false" href="/api/v1/auth/login">Log in via Keycloak</a>
 
-    <label for="password"> Password</label>
-    <input type="password" id="login-password" name="password" placeholder="Enter your Password" required />
-
-    <button type="submit">Submit</button>
     <input type="hidden" name="csrf-token" value="{{ csrf_token }}" />
   </form>
 </div>

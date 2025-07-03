@@ -6,5 +6,6 @@
 !uv.lock
 !alembic.ini
 !migrations
+!dev_registry_keycloak_realm.json
 # but make sure to ignore cache
 __pycache__

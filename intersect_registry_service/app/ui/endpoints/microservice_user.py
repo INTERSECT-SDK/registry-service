@@ -57,6 +57,7 @@ async def microservice_user_page(
             'services': results,
             'svc': invalid_service,
             'err': server_fault,
+            'username': username,
         },
         headers=headers,
     )

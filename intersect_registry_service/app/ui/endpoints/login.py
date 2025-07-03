@@ -7,6 +7,7 @@ from fastapi_csrf_protect import CsrfProtect
 from ...auth.impl import get_user
 from ...auth.session import LOGIN_URL, session_manager
 from ...auth.user import USER
+from ...core.environment import settings
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
 from ...utils.htmx import is_htmx_request
 from ..templating import TEMPLATES
@@ -93,6 +94,14 @@ async def logout_request(request: Request) -> RedirectResponse:
     response = RedirectResponse(request.url_for('login_page'), status_code=303)
     response.delete_cookie(
         session_manager.cookie_name,
+        secure=True,
+        httponly=True,
+        samesite='strict',
+    )
+    if request.session:
+        request.session.pop('user', None)
+    response.delete_cookie(
+        settings.SESSION_FINGERPRINT_COOKIE,
         secure=True,
         httponly=True,
         samesite='strict',

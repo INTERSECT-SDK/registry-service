@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     """Log level for the ENTIRE application"""
     PRODUCTION: bool = False
     """If True, this flag enables a few different settings:
-    
+
     1) Binds to 0.0.0.0 instead of 127.0.0.1
     2) Format logs in JSON instead of the "pretty" format
     3) Turns off uvicorn reload
@@ -48,20 +48,20 @@ class Settings(BaseSettings):
     """Number of workers for Uvicorn."""
     BASE_URL: StripTrailingSlash = ''
     """Set this to '' if this is not behind a proxy, set this to your proxy's path if this is behind a proxy.
-    
+
     Do not include the full URI, only include the path component.
     """
     ROOT_DIR: Path = Field(default=Path(__file__).parents[3].absolute())
     """The directory to where we execute the script from, mostly to point to shared files. This should ALWAYS be an absolute path.
 
     'Shared files' currently comprises just the migration scripts (always called 'migrations') and alembic.ini . For simplicity's sakes, the files are always assumed to have the same names from the root directory.
-    
+
     This doesn't need to be changed while developing. It should be set for you automatically in Docker. If running this via an init system like systemd, you'll need to manually set up a directory.
     """
 
     DEVELOPMENT_API_KEY: str = ''
     """
-    This flag should ONLY be set to a non-empty string if this is being run as part of a local development run. 
+    This flag should ONLY be set to a non-empty string if this is being run as part of a local development run.
     DO NOT SET THIS OUTSIDE OF A LOCAL SETUP.
     THIS VALUE MUST NOT BE SET IF THIS MICROSERVICE CAN BE ACCESSED BY ANY APPLICATION OUTSIDE OF YOUR CONTROL.
 
@@ -76,6 +76,45 @@ class Settings(BaseSettings):
     """
     If 'keycloak' : use Keycloak as an auth server
     If 'rudimentary' : use in-memory dictionary as the auth lookup
+    """
+
+    AUTHORIZE_URL: str = ''
+    """
+    Authentication URL From the OIDC provider.
+    """
+
+    TOKEN_URL: str = ''
+    """
+    Token URL From the OIDC provider.
+    """
+    SCOPE: str = ''
+    """
+    Scopes that should be present in token.
+    """
+    CLIENT_ID: str = ''
+    """
+    Client ID for this registry service instance from OIDC provider.
+    """
+    CLIENT_SECRET: str = ''
+    """
+    Client Secret for this registry service instance from OIDC provider.
+    """
+    REDIRECT_URL: str = ''
+    """
+    Should be /api/v1/auth/callback. The OIDC provider will redirect to this path after authentication.
+    """
+    JWKS_URL: str = ''
+    """
+    JWKS URL from OIDC provider. Used for token verification.
+    """
+
+    SESSION_SECRET: str = ''
+    """
+    SECRET to help encryption in authentication flow.
+    """
+    SESSION_FINGERPRINT_COOKIE: str = ''
+    """
+    The name of the cookie that will be used to store the user fingerprint.
     """
 
     SECRET_NAME: Annotated[str, Field(min_length=16)]
@@ -112,8 +151,8 @@ class Settings(BaseSettings):
     # application specific variables, TODO expand on this later
     BROKER_MANAGEMENT_URI: HttpUrl
     """Needs to include scheme, host/port (do NOT include userinfo in the URL), and path - up to where a normal user would login (do not include the RabbitMQ API URL)
-    
-    i.e. 
+
+    i.e.
     - http://localhost:15672/ for a local setup
     - https://mysubdomain.mydomain.org/proxy_path/ for a production setup where the management API is behind a reverse proxy
     """
@@ -135,11 +174,11 @@ class Settings(BaseSettings):
 
     ALEMBIC_RUN_MIGRATIONS: bool = True
     """If this is set to True, this assumes that all migrations present are desirable and should be upgraded.
-    
+
     The only time you would really set this to False would be if you need to manually run `alembic downgrade` and do
     NOT want the latest migrations restored. You would only realistically do this temporarily.
     Also note that the correct way to fix a bad migration is to create a new migration which restores it; in general, you never want to delete migration files.
-    
+
     It's plausible that we may not be able to autorun migrations ourselves, in which case this can safely be set to False.
     """
 
