@@ -30,9 +30,8 @@ oauth_session.register(
 @router.get('/auth/callback')
 async def auth_handler(request: Request) -> RedirectResponse:
     token = await oauth_session.keycloak.authorize_access_token(request)
-    access_token = token['access_token']
-    request.session['user'] = access_token
-
+    id_token = token['id_token']
+    request.session['user'] = id_token
     response = RedirectResponse(request.url_for('microservice_user_page'), status_code=303)
 
     fingerprint = ''.join(
