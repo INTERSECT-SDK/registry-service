@@ -58,7 +58,7 @@ class CookieSessionManager:
                 err_msg = 'Fingerprint is invalid.'
                 raise IntersectNotAuthenticatedError(err_msg)
             return await self.get_user(token)
-        return None
+        raise IntersectNotAuthenticatedError('Invalid Login.')
 
     async def optional(
         self,
