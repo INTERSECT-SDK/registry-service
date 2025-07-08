@@ -79,7 +79,7 @@ app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SESSION_SECRET,
-    max_age=60 * 60 * 24 * 7,
+    max_age=settings.SESSION_MAX_AGE,
     https_only=True,
     same_site='lax',
 )

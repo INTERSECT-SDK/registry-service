@@ -52,7 +52,7 @@ async def auth_handler(request: Request) -> RedirectResponse:
         secure=True,
         httponly=True,
         samesite='lax',
-        max_age=60 * 60 * 24 * 7,
+        max_age=settings.SESSION_MAX_AGE,
     )
     # Set fingerprint cookie
     response.set_cookie(
@@ -61,7 +61,7 @@ async def auth_handler(request: Request) -> RedirectResponse:
         secure=True,
         httponly=True,
         samesite='lax',
-        max_age=60 * 60 * 24 * 7,
+        max_age=settings.SESSION_MAX_AGE,
     )
     return response
 

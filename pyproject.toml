@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Access control layer for the INTERSECT control plane layer and data plane layer"
 classifiers = ["Private :: Do Not Upload"]
 authors = [
-    { name = "Lance-Drane", email = "dranelt@ornl.gov" },
+    { name = "Lance-Drane", email = "dranelt@ornl.gov" }, { name = "Greg-Cage", email = "cagege@ornl.gov"}
 ]
 requires-python = ">=3.12,<4.0"
 #license = { text = "BSD-3-Clause" }

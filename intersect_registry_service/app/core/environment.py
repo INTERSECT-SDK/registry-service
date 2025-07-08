@@ -116,6 +116,10 @@ class Settings(BaseSettings):
     """
     The name of the cookie that will be used to store the user fingerprint.
     """
+    SESSION_MAX_AGE: int = 604800
+    """
+    The max lifetime in seconds of the session cookie.
+    """
 
     SECRET_NAME: Annotated[str, Field(min_length=16)]
     """
