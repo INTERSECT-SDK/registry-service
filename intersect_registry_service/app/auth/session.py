@@ -11,6 +11,7 @@ from fastapi.responses import RedirectResponse
 from fastapi_login import LoginManager
 
 from ..core.environment import settings
+from ..core.log_config import logger
 from .user import USER
 
 LOGIN_URL = '/login'
@@ -30,18 +31,10 @@ class CookieSessionManager:
         self._user_callback: partial | None = None
         self.cookie_name = cookie_name
 
-    @property
-    def not_authenticated_exception(self) -> Exception:
-        """
-        Exception raised when no (valid) token is present.
-        Defaults to `fastapi_login.exceptions.InvalidCredentialsException`
-        """
-        return self._not_authenticated_exception
-
     async def __call__(
         self,
         request: Request,
-    ) -> Any:
+    ) -> USER:
         if request.session:
             fingerprint_cookie = request.cookies.get(settings.SESSION_FINGERPRINT_COOKIE, None)
             token = request.session.get('user', None)
@@ -71,7 +64,8 @@ class CookieSessionManager:
             user = await self.__call__(
                 request,
             )
-        except Exception:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
+            logger.error(e)
             return None
         else:
             return user
