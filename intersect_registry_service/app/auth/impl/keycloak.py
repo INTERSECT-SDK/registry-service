@@ -10,10 +10,20 @@ from ..user import USER
 
 def get_user_impl(token: str) -> None | USER:
     try:
-        jwks_client = PyJWKClient(settings.JWKS_URL)
-        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        verify = False
+        signing_key = ''
+        algorithms = []
+        if settings.SESSION_VERIFY_ID:
+            jwks_client = PyJWKClient(settings.JWKS_URL)
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            verify = True
+            algorithms = ['RS256']
         user = jwt.decode(
-            token, signing_key, algorithms=['RS256'], verify=True, options={'verify_aud': False}
+            token,
+            signing_key,
+            algorithms=algorithms,
+            verify=verify,
+            options={'verify_signature': verify},
         )
         username = user.get('preferred_username', None)
         if not username:
