@@ -23,7 +23,7 @@ def strip_trailing_slash(value: str) -> str:
     return value
 
 
-StripTrailingSlash = Annotated[str, BeforeValidator(strip_trailing_slash)]
+StripTrailingSlash_str = Annotated[str, BeforeValidator(strip_trailing_slash)]
 
 
 class Settings(BaseSettings):
@@ -31,6 +31,8 @@ class Settings(BaseSettings):
 
     For a valid local setup, see .env.example
     """
+
+    ### GENERIC APP CONFIG ###
 
     LOG_LEVEL: LogLevel = Field(default='INFO')
     """Log level for the ENTIRE application"""
@@ -46,7 +48,11 @@ class Settings(BaseSettings):
     """The port Uvicorn will try to run on"""
     SERVER_WORKERS: PositiveInt = 1
     """Number of workers for Uvicorn."""
-    BASE_URL: StripTrailingSlash = ''
+    DOMAIN: HttpUrl = HttpUrl('http://localhost:8000')
+    """
+    This is the protocol + DNS name of the website, without the path. Used for some callback URLs.
+    """
+    BASE_URL: StripTrailingSlash_str = ''
     """Set this to '' if this is not behind a proxy, set this to your proxy's path if this is behind a proxy.
 
     Do not include the full URI, only include the path component.
@@ -58,6 +64,22 @@ class Settings(BaseSettings):
 
     This doesn't need to be changed while developing. It should be set for you automatically in Docker. If running this via an init system like systemd, you'll need to manually set up a directory.
     """
+
+    @cached_property
+    def login_redirect_url(self) -> str:
+        """
+        The OIDC provider will redirect to this path after authentication.
+        """
+        return f'{strip_trailing_slash(str(self.DOMAIN))}{self.BASE_URL}login/callback'
+
+    @cached_property
+    def logout_redirect_url(self) -> str:
+        """
+        The OIDC provider will redirect to this path after signing out.
+        """
+        return f'{strip_trailing_slash(str(self.DOMAIN))}{self.BASE_URL}logout/callback'
+
+    ### AUTHENTICATION CONFIGS (allows for enabling/disabling certain authentication mechanisms) ###
 
     DEVELOPMENT_API_KEY: str = ''
     """
@@ -75,18 +97,44 @@ class Settings(BaseSettings):
     AUTH_IMPLEMENTATION: Literal['keycloak', 'rudimentary']
     """
     If 'keycloak' : use Keycloak as an auth server
-    If 'rudimentary' : use in-memory dictionary as the auth lookup
+    If 'rudimentary' : use in-memory dictionary as the auth lookup. This is obviously not secure, but can be useful for fast development.
     """
 
-    AUTHORIZE_URL: str = ''
+    ### KEYCLOAK SPECIFIC CONFIG ###
+
+    KEYCLOAK_REALM_BASE_URL: HttpUrl
     """
-    Authentication URL From the OIDC provider.
+    The root URL for the OIDC provider
     """
 
-    TOKEN_URL: str = ''
-    """
-    Token URL From the OIDC provider.
-    """
+    @cached_property
+    def keycloak_authorize_url(self) -> str:
+        """
+        Authentication URL From the OIDC provider.
+        """
+        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/auth'
+
+    @cached_property
+    def keycloak_logout_url(self) -> str:
+        """
+        Authentication URL From the OIDC provider.
+        """
+        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/logout'
+
+    @cached_property
+    def keycloak_token_url(self) -> str:
+        """
+        Token URL From the OIDC provider.
+        """
+        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/token'
+
+    @cached_property
+    def keycloak_jwks_url(self) -> str:
+        """
+        JWKS URL from OIDC provider. Used for token verification.
+        """
+        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/certs'
+
     SCOPE: str = ''
     """
     Scopes that should be present in token.
@@ -99,14 +147,8 @@ class Settings(BaseSettings):
     """
     Client Secret for this registry service instance from OIDC provider.
     """
-    REDIRECT_URL: str = ''
-    """
-    Should be /api/v1/auth/callback. The OIDC provider will redirect to this path after authentication.
-    """
-    JWKS_URL: str = ''
-    """
-    JWKS URL from OIDC provider. Used for token verification.
-    """
+
+    ### SESSION / MISC APP CONFIG ###
 
     SESSION_SECRET: str = ''
     """
@@ -130,6 +172,8 @@ class Settings(BaseSettings):
     """
     The secret name should NOT be shared with ANYONE. This is for registry service internals, it should not propagate beyond this application.
     """
+
+    ### INTERSECT ###
 
     SYSTEM_NAME: str = Field(min_length=3, pattern=HIERARCHY_REGEX)
     """
@@ -170,7 +214,9 @@ class Settings(BaseSettings):
     def broker_client_uri(self) -> str:
         return f'{get_raw_protocol(self.BROKER_PROTOCOL, bool(self.BROKER_TLS_CERT))}://{self.BROKER_CLIENT_USERNAME}:{self.BROKER_CLIENT_PASSWORD}@{self.BROKER_HOST}:{self.BROKER_PORT}{get_uri_path(self.BROKER_PROTOCOL)}'
 
-    # database stuff - advisable to use separate env variables for each, to make deployment engineers' lives easier
+    ### DATABASE ###
+
+    # advisable to use separate env variables for each, to make deployment engineers' lives easier
     POSTGRESQL_USERNAME: str
     POSTGRESQL_PASSWORD: str
     POSTGRESQL_HOST: str

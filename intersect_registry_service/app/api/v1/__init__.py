@@ -1,9 +1,12 @@
 from fastapi import APIRouter
 
-from .endpoints import auth, general, sdk
+from ...core.environment import settings
+from .endpoints import general
 
 router = APIRouter(prefix='/v1', tags=['V1'])
-# router.include_router(credentials.router, prefix='/credentials', tags=['Credentials'])
 router.include_router(general.router)
-router.include_router(auth.router)
+if settings.DEVELOPMENT_API_KEY:
+    from .endpoints.sdk import impl_devmode as sdk
+else:
+    from .endpoints.sdk import impl_real as sdk
 router.include_router(sdk.router, prefix='/sdk', tags=['SDK'])

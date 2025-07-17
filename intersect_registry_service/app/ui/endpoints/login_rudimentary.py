@@ -4,10 +4,8 @@ from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi_csrf_protect import CsrfProtect
 
-from ...auth.impl import get_user
-from ...auth.session import LOGIN_URL, session_manager
-from ...auth.user import USER
-from ...core.environment import settings
+from ...auth import get_user, session_manager
+from ...auth.definitions import LOGIN_URL, USER
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
 from ...utils.htmx import is_htmx_request
 from ..templating import TEMPLATES
@@ -20,8 +18,8 @@ async def login_page(
     request: Request,
     user: Annotated[USER, Depends(session_manager.optional)],
     csrf_protect: Annotated[CsrfProtect, Depends()],
-    username: str | None = Query(''),
-    err: str | None = Query(''),
+    username: Annotated[str, Query()] = '',
+    err: Annotated[str, Query()] = '',
 ) -> HTMLResponse:
     if user is not None:
         return RedirectResponse(request.url_for('microservice_user_page'))  # type: ignore[return-value]
@@ -32,7 +30,7 @@ async def login_page(
     headers = get_html_security_headers(nonce)
     response = TEMPLATES.TemplateResponse(
         request=request,
-        name='login-page.jinja',
+        name='non-keycloak-login-page.jinja',
         context={
             'nonce': nonce,
             'csrf_token': csrf_token,
@@ -100,10 +98,4 @@ async def logout_request(request: Request) -> RedirectResponse:
     )
     if request.session:
         request.session.pop('user', None)
-    response.delete_cookie(
-        settings.SESSION_FINGERPRINT_COOKIE,
-        secure=True,
-        httponly=True,
-        samesite='strict',
-    )
     return response

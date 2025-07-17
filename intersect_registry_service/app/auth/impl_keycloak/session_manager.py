@@ -1,29 +1,17 @@
 import hashlib
 import inspect
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
 from functools import partial
 from typing import Any
 
 from anyio.to_thread import run_sync
 from fastapi import Request
-from fastapi.responses import RedirectResponse
-from fastapi_login import LoginManager
 
-from ..core.environment import settings
-from ..core.log_config import logger
-from .user import USER
+from ...core.environment import settings
+from ...core.log_config import logger
+from ..definitions import SESSION_COOKIE_NAME, USER, IntersectNotAuthenticatedError, SessionManager
 
 LOGIN_URL = '/login'
-
-
-class IntersectNotAuthenticatedError(Exception):
-    """Exception the login manager throws if it can't authenticate the user."""
-
-
-def handle_unauthenticated(request: Request, exc: Exception) -> RedirectResponse:  # noqa: ARG001
-    """If the manager can't authenticate the user, redirect them to the login page."""
-    return RedirectResponse(request.url_for('login_page'), status_code=303)
 
 
 class CookieSessionManager:
@@ -51,7 +39,8 @@ class CookieSessionManager:
                 err_msg = 'Fingerprint is invalid.'
                 raise IntersectNotAuthenticatedError(err_msg)
             return await self.get_user(token)
-        raise IntersectNotAuthenticatedError('Invalid Login.')
+        err_msg = 'Invalid Login.'
+        raise IntersectNotAuthenticatedError(err_msg)
 
     async def optional(
         self,
@@ -65,7 +54,8 @@ class CookieSessionManager:
                 request,
             )
         except Exception as e:  # noqa: BLE001
-            logger.error(e)
+            if not isinstance(e, IntersectNotAuthenticatedError):
+                logger.error(e)
             return None
         else:
             return user
@@ -90,17 +80,7 @@ class CookieSessionManager:
         return decorator
 
 
-login_session_manager = LoginManager(
-    settings.SECRET_NAME,
-    LOGIN_URL,
-    algorithm='HS256',  # default, can potentially use 'RS256'
-    use_cookie=True,
-    cookie_name='session',
-    use_header=False,
-    not_authenticated_exception=IntersectNotAuthenticatedError,
-    default_expiry=timedelta(minutes=15),  # this is the default and seems like a good value
-)
-session_manager = CookieSessionManager(cookie_name='session')
+session_manager: SessionManager = CookieSessionManager(cookie_name=SESSION_COOKIE_NAME)
 """This login manager currently uses session cookies, but can potentially use JWT.
 
 The current idea is to only use it as the authentication manager for UI endpoints, and use API keys for automated endpoints.

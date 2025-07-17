@@ -55,10 +55,7 @@
         "description": "${role_default-roles}",
         "composite": true,
         "composites": {
-          "realm": [
-            "offline_access",
-            "uma_authorization"
-          ]
+          "realm": ["offline_access", "uma_authorization"]
         },
         "clientRole": false,
         "containerId": "9dad9eed-aa84-455f-ba00-b4ac57b20973",
@@ -188,9 +185,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "realm-management": [
-                "query-clients"
-              ]
+              "realm-management": ["query-clients"]
             }
           },
           "clientRole": true,
@@ -231,10 +226,7 @@
           "composite": true,
           "composites": {
             "client": {
-              "realm-management": [
-                "query-groups",
-                "query-users"
-              ]
+              "realm-management": ["query-groups", "query-users"]
             }
           },
           "clientRole": true,
@@ -339,9 +331,7 @@
     "clientRole": false,
     "containerId": "9dad9eed-aa84-455f-ba00-b4ac57b20973"
   },
-  "requiredCredentials": [
-    "password"
-  ],
+  "requiredCredentials": ["password"],
   "otpPolicyType": "totp",
   "otpPolicyAlgorithm": "HmacSHA1",
   "otpPolicyInitialCounter": 0,
@@ -356,10 +346,7 @@
   ],
   "localizationTexts": {},
   "webAuthnPolicyRpEntityName": "keycloak",
-  "webAuthnPolicySignatureAlgorithms": [
-    "ES256",
-    "RS256"
-  ],
+  "webAuthnPolicySignatureAlgorithms": ["ES256", "RS256"],
   "webAuthnPolicyRpId": "",
   "webAuthnPolicyAttestationConveyancePreference": "not specified",
   "webAuthnPolicyAuthenticatorAttachment": "not specified",
@@ -370,10 +357,7 @@
   "webAuthnPolicyAcceptableAaguids": [],
   "webAuthnPolicyExtraOrigins": [],
   "webAuthnPolicyPasswordlessRpEntityName": "keycloak",
-  "webAuthnPolicyPasswordlessSignatureAlgorithms": [
-    "ES256",
-    "RS256"
-  ],
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": ["ES256", "RS256"],
   "webAuthnPolicyPasswordlessRpId": "",
   "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
@@ -396,24 +380,45 @@
       "requiredActions": [],
       "notBefore": 0,
       "groups": []
+    },
+    {
+      "id": "c102cfc4-511f-4453-b095-c96898c74c3a",
+      "username": "username",
+      "firstName": "username",
+      "lastName": "password",
+      "email": "username@example.com",
+      "emailVerified": false,
+      "createdTimestamp": 1752714272416,
+      "enabled": true,
+      "totp": false,
+      "credentials": [
+        {
+          "id": "a0189e57-921b-4cf7-8d64-eae9f5beed87",
+          "type": "password",
+          "userLabel": "My password",
+          "createdDate": 1752714287779,
+          "secretData": "{\"value\":\"U6YCsm5IvE1VZaluGsSVJktRWKcWc6lyOZY24QQTV+Y=\",\"salt\":\"EiqFsNDt+u4NjQZ4TPb3XA==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+        }
+      ],
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": ["default-roles-dev_registry_keycloak_realm.json"],
+      "notBefore": 0,
+      "groups": []
     }
   ],
   "scopeMappings": [
     {
       "clientScope": "offline_access",
-      "roles": [
-        "offline_access"
-      ]
+      "roles": ["offline_access"]
     }
   ],
   "clientScopeMappings": {
     "account": [
       {
         "client": "account-console",
-        "roles": [
-          "manage-account",
-          "view-groups"
-        ]
+        "roles": ["manage-account", "view-groups"]
       }
     ]
   },
@@ -428,9 +433,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/realms/dev_registry_keycloak_realm.json/account/*"
-      ],
+      "redirectUris": ["/realms/dev_registry_keycloak_realm.json/account/*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
@@ -475,9 +478,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/realms/dev_registry_keycloak_realm.json/account/*"
-      ],
+      "redirectUris": ["/realms/dev_registry_keycloak_realm.json/account/*"],
       "webOrigins": [],
       "notBefore": 0,
       "bearerOnly": false,
@@ -667,12 +668,11 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "oOwbABbnGEwRlXU3HzCgspBtWfwIiIfQ",
       "redirectUris": [
-        "http://localhost:8000/api/v1/auth/callback",
-        "http://localhost:8000/auth/callback"
+        "http://localhost:8000",
+        "http://localhost:8000/login",
+        "http://localhost:8000/login/callback"
       ],
-      "webOrigins": [
-        "http://localhost:8000"
-      ],
+      "webOrigins": ["http://localhost:8000"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -741,12 +741,8 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": [
-        "/admin/dev_registry_keycloak_realm.json/console/*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
+      "redirectUris": ["/admin/dev_registry_keycloak_realm.json/console/*"],
+      "webOrigins": ["+"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -1517,9 +1513,7 @@
   },
   "smtpServer": {},
   "eventsEnabled": false,
-  "eventsListeners": [
-    "jboss-logging"
-  ],
+  "eventsListeners": ["jboss-logging"],
   "enabledEventTypes": [],
   "adminEventsEnabled": false,
   "adminEventsDetailsEnabled": false,
@@ -1558,9 +1552,7 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "max-clients": [
-            "200"
-          ]
+          "max-clients": ["200"]
         }
       },
       {
@@ -1624,12 +1616,8 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "host-sending-registration-request-must-match": [
-            "true"
-          ],
-          "client-uris-must-match": [
-            "true"
-          ]
+          "host-sending-registration-request-must-match": ["true"],
+          "client-uris-must-match": ["true"]
         }
       },
       {
@@ -1639,9 +1627,7 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": [
-            "true"
-          ]
+          "allow-default-scopes": ["true"]
         }
       },
       {
@@ -1651,9 +1637,7 @@
         "subType": "authenticated",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": [
-            "true"
-          ]
+          "allow-default-scopes": ["true"]
         }
       }
     ],
@@ -1664,12 +1648,8 @@
         "providerId": "rsa-enc-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "RSA-OAEP"
-          ]
+          "priority": ["100"],
+          "algorithm": ["RSA-OAEP"]
         }
       },
       {
@@ -1678,12 +1658,8 @@
         "providerId": "hmac-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "HS512"
-          ]
+          "priority": ["100"],
+          "algorithm": ["HS512"]
         }
       },
       {
@@ -1692,9 +1668,7 @@
         "providerId": "aes-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ]
+          "priority": ["100"]
         }
       },
       {
@@ -1703,9 +1677,7 @@
         "providerId": "rsa-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "100"
-          ]
+          "priority": ["100"]
         }
       },
       {
@@ -1714,12 +1686,8 @@
         "providerId": "hmac-generated",
         "subComponents": {},
         "config": {
-          "priority": [
-            "-100"
-          ],
-          "algorithm": [
-            "HS256"
-          ]
+          "priority": ["-100"],
+          "algorithm": ["HS256"]
         }
       }
     ]

@@ -1,5 +1,5 @@
 FROM quay.io/keycloak/keycloak:26.1.3
-ENV KEYCLOAK_REALM_PATH=dev_registry_keycloak_realm.json
+ARG KEYCLOAK_REALM_PATH=developer-realm-export.json
 
 WORKDIR /opt/keycloak
 USER root

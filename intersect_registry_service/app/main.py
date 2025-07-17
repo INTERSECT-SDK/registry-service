@@ -13,11 +13,11 @@ from sqlmodel import create_engine
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api import router as api_router
-from .auth.csrf import csrf_protect_exception_handler
-from .auth.session import IntersectNotAuthenticatedError, handle_unauthenticated
+from .auth.definitions import IntersectNotAuthenticatedError, handle_unauthenticated
 from .core.configuration_manager import ConfigurationManager
 from .core.environment import settings
 from .core.log_config import logger, setup_logging
+from .middlewares.csrf import csrf_protect_exception_handler
 from .middlewares.logging_context import add_logging_middleware
 from .ui import router as ui_router
 

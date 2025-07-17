@@ -97,6 +97,7 @@ extend-select = [
     'TRY',   # tryceratops
     'FLY',   # flynt
     'RUF',   # RUFF additional rules
+    'FAST',  # FastAPI
 ]
 # If you're seeking to disable a rule, first consider whether the rule is overbearing, or if it should only be turned off for your usecase.
 ignore = [

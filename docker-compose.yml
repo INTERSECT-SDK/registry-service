@@ -45,8 +45,7 @@ services:
 
   keycloak:
     build:
-      context: .
-      dockerfile: ./Dockerfile.keycloak
+      context: ./keycloak/
     container_name: keycloak
     # restart: unless-stopped
     # ports:

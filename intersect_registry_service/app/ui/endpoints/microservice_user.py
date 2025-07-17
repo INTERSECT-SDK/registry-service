@@ -6,8 +6,8 @@ from fastapi_csrf_protect import CsrfProtect
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
-from ...auth.session import session_manager
-from ...auth.user import USER
+from ...auth import session_manager
+from ...auth.definitions import USER
 from ...core.definitions import HIERARCHY_REGEX
 from ...core.environment import settings
 from ...core.log_config import logger
@@ -30,8 +30,8 @@ async def microservice_user_page(
     request: Request,
     user: Annotated[USER, Depends(session_manager)],
     csrf_protect: Annotated[CsrfProtect, Depends()],
-    invalid_service: str | None = Query('', alias='svc'),
-    server_fault: str | None = Query('', alias='err'),
+    invalid_service: Annotated[str, Query(alias='svc')] = '',
+    server_fault: Annotated[str, Query(alias='err')] = '',
 ) -> HTMLResponse:
     logger.info('test')
     username = user[0]
