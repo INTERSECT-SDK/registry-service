@@ -2,10 +2,11 @@ services:
   broker:
     container_name: registry-broker
     image: "bitnami/rabbitmq:3.13.3"
-    ports:
-      - "1883:1883" # MQTT port
-      - "5672:5672" # AMQP port
-      - "15672:15672" # Web UI
+    network_mode: "host"
+    # ports:
+    #   - "1883:1883" # MQTT port
+    #   - "5672:5672" # AMQP port
+    #   - "15672:15672" # Web UI
     environment:
       # full list of env variables available at https://github.com/bitnami/containers/blob/main/bitnami/rabbitmq/README.md
       RABBITMQ_PLUGINS: "rabbitmq_management rabbitmq_mqtt"
@@ -18,8 +19,8 @@ services:
       retries: 5
       start_period: 10s
       timeout: 10s
-    networks:
-      - intersect_registry_network
+    # networks:
+    #   - intersect_registry_network
   database:
     container_name: registry-database
     image: "bitnami/postgresql:17"
@@ -33,13 +34,43 @@ services:
       interval: 10s
       retries: 5
       start_period: 10s
-      timeout: 10s      
-    ports:
-      - 5432:5432
+      timeout: 10s
+    network_mode: "host"
+    # ports:
+    #   - 5432:5432
     volumes:
       - 'intersect_registry_postgresql_data:/bitnami/postgresql'
-    networks:
-      - intersect_registry_network
+    # networks:
+    #   - intersect_registry_network
+
+  keycloak:
+    build:
+      context: ./keycloak/
+    container_name: keycloak
+    # restart: unless-stopped
+    # ports:
+    #   - "8081:8080"
+    network_mode: "host"
+    environment:
+      # FEDERATE_LDAP: "true"
+      # LDAP_URL: YOUR_LDAP_URL
+      # USERSDN: YOUR_USER_DN
+      GOOGLE_IDP: "true"
+      GOOGLE_CLIENT_ID: YOUR_CLIENT_ID
+      GOOGLE_SECRET: YOUR_GOOGLE_CLIENT_SECRET
+      KC_DB: postgres
+      # KC_DB_URL: jdbc:postgresql://registry-database:5432/registry
+      KC_DB_URL: jdbc:postgresql://localhost:5432/registry
+      KC_DB_PASSWORD: registry_password
+      KC_DB_USERNAME: registry_username
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      HOSTNAME: localhost
+      # HTTPS: true
+    depends_on:
+      - database
+    # networks:
+    #   - intersect_registry_network
 
 # Define a network, which allows containers to communicate
 # with each other, by using their container name as a hostname

@@ -8,3 +8,4 @@
 !migrations
 # but make sure to ignore cache
 __pycache__
+*.pyc

@@ -1,7 +1,7 @@
 {% extends 'layout.jinja' %}
 
 {% block logout %}
-<form action="/logout" method="post" class="prominent-form">
+<form action="logout" method="post" class="prominent-form" hx-boost="false">
   <button type="submit">Log Out</button>
 </form>
 {% endblock %}

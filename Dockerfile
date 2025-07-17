@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --frozen --no-install-project --no-editable
 
 # Sync the project
-COPY . .
+COPY intersect_registry_service intersect_registry_service
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --frozen --no-editable
 

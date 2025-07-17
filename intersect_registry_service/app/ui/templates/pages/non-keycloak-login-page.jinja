@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="prominent-form-wrapper">
-  <form action="login" method="post" class="prominent-form" hx-disabled-elt="find button">
+  <form action="login" method="post" class="prominent-form" hx-disabled-elt="find button" hx-boost="false">
     <span id="login-form-errors">
       {% include 'login-page-error-partial.jinja' %}
     </span>

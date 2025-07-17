@@ -10,13 +10,14 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from sqlmodel import create_engine
+from starlette.middleware.sessions import SessionMiddleware
 
 from .api import router as api_router
-from .auth.csrf import csrf_protect_exception_handler
-from .auth.session import IntersectNotAuthenticatedError, handle_unauthenticated
+from .auth.definitions import IntersectNotAuthenticatedError, handle_unauthenticated
 from .core.configuration_manager import ConfigurationManager
 from .core.environment import settings
 from .core.log_config import logger, setup_logging
+from .middlewares.csrf import csrf_protect_exception_handler
 from .middlewares.logging_context import add_logging_middleware
 from .ui import router as ui_router
 
@@ -74,6 +75,14 @@ app = FastAPI(
 
 add_logging_middleware(app)
 app.add_middleware(CorrelationIdMiddleware)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SESSION_SECRET,
+    max_age=settings.SESSION_MAX_AGE,
+    https_only=True,
+    same_site='lax',
+)
 
 app.add_exception_handler(IntersectNotAuthenticatedError, handle_unauthenticated)
 app.add_exception_handler(CsrfProtectError, csrf_protect_exception_handler)

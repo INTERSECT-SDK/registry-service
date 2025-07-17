@@ -21,12 +21,19 @@ def main() -> None:
     else:
         reload_str = ', server will reload on file changes' if settings.SERVER_WORKERS == 1 else ''
         logger.info('Running DEVELOPMENT server at %s%s', url, reload_str)
-        logger.info('View docs at %s/docs', url)
+        logger.info('View docs at %s/api/docs', url)
 
     if settings.DEVELOPMENT_API_KEY:
         logger.warning(
             'WARNING: DEVELOPMENT_API_KEY was set to a non-empty value, running in Developer Mode. Do NOT use this on a remote server.'
         )
+
+    if settings.AUTH_IMPLEMENTATION == 'rudimentary':
+        logger.warning(
+            'WARNING: Auth implementation is "rudimentary", make sure you use another value in production'
+        )
+    else:
+        logger.info('Using keycloak as auth implementation')
 
     # initialize backing services
     if settings.ALEMBIC_RUN_MIGRATIONS:
