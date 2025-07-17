@@ -33,7 +33,7 @@ oauth_session.register(
 
 
 @router.get(f'{LOGIN_URL}/callback')
-async def auth_handler(request: Request) -> RedirectResponse:
+async def login_callback(request: Request) -> RedirectResponse:
     token = await oauth_session.keycloak.authorize_access_token(request)
     id_token = token['id_token']
     request.session['user'] = id_token
@@ -73,7 +73,9 @@ async def auth_handler(request: Request) -> RedirectResponse:
 
 @router.get(f'{LOGIN_URL}/redirect')
 async def login_redirect(request: Request) -> RedirectResponse:
-    return await oauth_session.keycloak.authorize_redirect(request, settings.login_redirect_url)
+    return await oauth_session.keycloak.authorize_redirect(
+        request, request.url_for('login_callback')
+    )
 
 
 @router.get(LOGIN_URL)
@@ -82,7 +84,6 @@ async def login_page(
 ) -> RedirectResponse:
     if user is not None:
         return RedirectResponse(request.url_for('microservice_user_page'))
-    # return await oauth_session.keycloak.authorize_redirect(request, settings.login_redirect_url)
 
     nonce = get_nonce()
     headers = get_html_security_headers(nonce)
@@ -97,7 +98,7 @@ async def login_page(
 
 
 @router.post('/logout', response_class=RedirectResponse, dependencies=[Depends(session_manager)])
-async def logout_callback(request: Request) -> RedirectResponse:
+async def logout_request(request: Request) -> RedirectResponse:
     user = request.session.get('user')
     if user:
         request.session.pop('user')
@@ -123,6 +124,6 @@ async def logout_callback(request: Request) -> RedirectResponse:
         settings.SESSION_FINGERPRINT_COOKIE,
         secure=True,
         httponly=True,
-        samesite='strict',
+        samesite='lax',
     )
     return response

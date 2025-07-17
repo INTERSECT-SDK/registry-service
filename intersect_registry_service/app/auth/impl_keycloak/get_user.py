@@ -5,17 +5,23 @@ from ...core.environment import settings
 from ...core.log_config import logger
 from ..definitions import USER, IntersectNotAuthenticatedError
 
+_jwks_client = PyJWKClient(settings.keycloak_jwks_url)
+"""
+This object handles caching, so it needs to be a global singleton
+
+See: https://blog.ploetzli.ch/2024/pyjwt-django-resource-server-sane/
+"""
+
 
 def get_user(user_token: str) -> None | USER:
     try:
-        jwks_client = PyJWKClient(settings.keycloak_jwks_url)
-        signing_key = jwks_client.get_signing_key_from_jwt(user_token)
+        signing_key = _jwks_client.get_signing_key_from_jwt(user_token).key
         user = jwt.decode(
             user_token,
             signing_key,
             algorithms=['RS256'],
             verify=True,
-            options={'verify_aud': False},
+            options={'verify_signature': True, 'verify_aud': False},
         )
         username = user.get('preferred_username', None)
         if not username:

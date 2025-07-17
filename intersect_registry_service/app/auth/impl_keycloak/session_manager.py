@@ -11,8 +11,6 @@ from ...core.environment import settings
 from ...core.log_config import logger
 from ..definitions import SESSION_COOKIE_NAME, USER, IntersectNotAuthenticatedError, SessionManager
 
-LOGIN_URL = '/login'
-
 
 class CookieSessionManager:
     def __init__(self, cookie_name: str) -> None:

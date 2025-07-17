@@ -23,7 +23,7 @@ def strip_trailing_slash(value: str) -> str:
     return value
 
 
-StripTrailingSlash_str = Annotated[str, BeforeValidator(strip_trailing_slash)]
+StripTrailingSlash = Annotated[str, BeforeValidator(strip_trailing_slash)]
 
 
 class Settings(BaseSettings):
@@ -48,11 +48,7 @@ class Settings(BaseSettings):
     """The port Uvicorn will try to run on"""
     SERVER_WORKERS: PositiveInt = 1
     """Number of workers for Uvicorn."""
-    DOMAIN: HttpUrl = HttpUrl('http://localhost:8000')
-    """
-    This is the protocol + DNS name of the website, without the path. Used for some callback URLs.
-    """
-    BASE_URL: StripTrailingSlash_str = ''
+    BASE_URL: StripTrailingSlash = ''
     """Set this to '' if this is not behind a proxy, set this to your proxy's path if this is behind a proxy.
 
     Do not include the full URI, only include the path component.
@@ -64,20 +60,6 @@ class Settings(BaseSettings):
 
     This doesn't need to be changed while developing. It should be set for you automatically in Docker. If running this via an init system like systemd, you'll need to manually set up a directory.
     """
-
-    @cached_property
-    def login_redirect_url(self) -> str:
-        """
-        The OIDC provider will redirect to this path after authentication.
-        """
-        return f'{strip_trailing_slash(str(self.DOMAIN))}{self.BASE_URL}login/callback'
-
-    @cached_property
-    def logout_redirect_url(self) -> str:
-        """
-        The OIDC provider will redirect to this path after signing out.
-        """
-        return f'{strip_trailing_slash(str(self.DOMAIN))}{self.BASE_URL}logout/callback'
 
     ### AUTHENTICATION CONFIGS (allows for enabling/disabling certain authentication mechanisms) ###
 
@@ -157,11 +139,6 @@ class Settings(BaseSettings):
     SESSION_FINGERPRINT_COOKIE: str = ''
     """
     The name of the cookie that will be used to store the user fingerprint.
-    """
-    SESSION_VERIFY_ID: bool = False
-    """Whether to verify the ID token stored in the session cookie on every request.
-
-    If true, it will be checked each request. This means that if the Keycloak server goes down at any time, then the registry service will reject any requests made while the Keycloak server is down.
     """
     SESSION_MAX_AGE: int = 604800
     """
