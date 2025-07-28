@@ -4,6 +4,8 @@ from typing import Any, Protocol
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 
+from ..utils.urls import url_abspath_for
+
 USER = tuple[str, str]
 """
 The defined typing is the return value of what the SessionManager looks up.
@@ -23,7 +25,7 @@ class IntersectNotAuthenticatedError(Exception):
 
 def handle_unauthenticated(request: Request, exc: Exception) -> RedirectResponse:  # noqa: ARG001
     """If the session manager can't authenticate the user, redirect them to the login page."""
-    return RedirectResponse(request.url_for('login_page'), status_code=303)
+    return RedirectResponse(url_abspath_for(request, 'login_page'), status_code=303)
 
 
 class SessionManager(Protocol):

@@ -7,7 +7,7 @@ from typing import Annotated
 import jwt
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends
-from fastapi.responses import RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 from starlette.config import Config
 from starlette.requests import Request
 
@@ -15,6 +15,7 @@ from ...auth import session_manager
 from ...auth.definitions import LOGIN_URL, USER
 from ...core.environment import settings
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
+from ...utils.urls import absolute_url_for, url_abspath_for
 from ..templating import TEMPLATES
 
 router = APIRouter()
@@ -37,7 +38,7 @@ async def login_callback(request: Request) -> RedirectResponse:
     token = await oauth_session.keycloak.authorize_access_token(request)
     id_token = token['id_token']
     request.session['user'] = id_token
-    response = RedirectResponse(request.url_for('microservice_user_page'), status_code=303)
+    response = RedirectResponse(url_abspath_for(request, 'microservice_user_page'), status_code=303)
 
     fingerprint = ''.join(
         random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(32)
@@ -73,9 +74,10 @@ async def login_callback(request: Request) -> RedirectResponse:
 
 @router.get(f'{LOGIN_URL}/redirect')
 async def login_redirect(request: Request) -> RedirectResponse:
-    return await oauth_session.keycloak.authorize_redirect(
-        request, request.url_for('login_callback')
-    )
+    url_for = absolute_url_for(request, 'login_callback')
+    if not url_for:
+        return PlainTextResponse('Internal server error', status_code=500)  # type: ignore[return-value]
+    return await oauth_session.keycloak.authorize_redirect(request, url_for)
 
 
 @router.get(LOGIN_URL)
@@ -83,7 +85,7 @@ async def login_page(
     request: Request, user: Annotated[USER, Depends(session_manager.optional)]
 ) -> RedirectResponse:
     if user is not None:
-        return RedirectResponse(request.url_for('microservice_user_page'))
+        return RedirectResponse(url_abspath_for(request, 'microservice_user_page'))
 
     nonce = get_nonce()
     headers = get_html_security_headers(nonce)
@@ -102,11 +104,17 @@ async def logout_request(request: Request) -> RedirectResponse:
     user = request.session.get('user')
     if user:
         request.session.pop('user')
-        app_redirect_uri = urllib.parse.quote_plus(str(request.url_for('login_page')))
-        keycloak_url = f'{settings.keycloak_logout_url}?post_logout_redirect_uri={app_redirect_uri}&id_token_hint={urllib.parse.quote_plus(user)}'
+        url_for = absolute_url_for(request, 'login_page')
+        if url_for:
+            app_redirect_uri = urllib.parse.quote_plus(str(url_for))
+            keycloak_url = f'{settings.keycloak_logout_url}?post_logout_redirect_uri={app_redirect_uri}&id_token_hint={urllib.parse.quote_plus(user)}'
+        else:
+            keycloak_url = (
+                f'{settings.keycloak_logout_url}?id_token_hint={urllib.parse.quote_plus(user)}'
+            )
         response = RedirectResponse(keycloak_url, status_code=303)
     else:
-        response = RedirectResponse(request.url_for('login_page'), status_code=303)
+        response = RedirectResponse(url_abspath_for(request, 'login_page'), status_code=303)
 
     response.delete_cookie(
         session_manager.cookie_name,

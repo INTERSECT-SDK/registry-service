@@ -6,11 +6,11 @@
   <title>{% block subtitle %}{% endblock %} ~ Intersect Registry</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="htmx-config" content='{"inlineStyleNonce":"{{nonce}}","allowEval":false,"allowScriptTags":false}'>
-  <link nonce="{{nonce}}" rel="icon" type="image/png" href="{{ url_for('static', path='/favicon.png') }}" />
+  <link nonce="{{nonce}}" rel="icon" type="image/png" href="{{ url_abspath_for('static', path='/favicon.png') }}" />
   <meta name="theme-color" content="#000000" />
-  <link nonce="{{nonce}}" rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" />
+  <link nonce="{{nonce}}" rel="stylesheet" href="{{ url_abspath_for('static', path='/css/style.css') }}" />
   {# to test the application without HTMX, AKA 'no javascript', just comment out the script #}
-  <script defer nonce="{{nonce}}" src="{{ url_for('static', path='/js/htmx-2.0.4.min.js') }}"></script>
+  <script defer nonce="{{nonce}}" src="{{ url_abspath_for('static', path='/js/htmx-2.0.4.min.js') }}"></script>
 </head>
 
 <body hx-boost="true">

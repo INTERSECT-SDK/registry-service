@@ -55,9 +55,15 @@ Make sure you have UV installed ([Instructions](https://docs.astral.sh/uv/#insta
 ### Running
 
 - `docker compose up -d` - spins up the database and brokers
-- `uv run python -m intersect_registry_service`
+- `uv run python -m intersect_registry_service`*
 
 Application runs on port 8000 unless you set `SERVER_PORT`
+
+### Conventions distinct to this project (READ THIS if developing)
+
+- Instead of using `url_for` in Jinja/HTML templates, use `url_abspath_for`. The API is exactly the same, this allows us to use absolute paths.
+- Instead of using `request.url_for(name, **path_params)`, use `intersect_registry_service.app.utils.urls.url_abspath_for(request, name, **path_params)` when redirecting with RedirectResponse to another Registry Service URL.
+   - To provide a callback URL to external services i.e. Keycloak, use `intersect_registry_service.app.utils.urls.absolute_url_for(request, name)` . _If setting settings.PRODUCTION to True, this relies on you running behind a proxy._
 
 ### Important configuration variables
 
@@ -117,3 +123,38 @@ From there, you can do one of two things:
 Downgrades should always be manual. In production, you should generally run commands like `uv run alembic downgrade -1` (the `-1` signifies that you should downgrade one migration version), OR you can manually scan the migration version files for the `revision` field and run `uv alembic downgrade <revision>` .  NOTE: if you downgrade a revision, it appears that you can NEVER reapply it to the same database...
 
 To generate SQL output (instead of directly applying changes to a database), add the `--sql` flag to any alembic command. It is possible that for production deployments we may not be able to directly modify the DB, in which case submitting the SQL output to a DBA to execute is the correct approach. With this usecase, `ALEMBIC_RUN_MIGRATIONS` should be set to `False` in the configuration.
+
+## Production setup
+
+All environment variables can be checked in `intersect_registry_service/app/core/environment.py`, any class value of `Settings` in SCREAMING_SNAKE_CASE is an environment variable.
+
+Some notes:
+- make sure you set `AUTH_IMPLEMENTATION` to `keycloak` in any serious deployment setup
+- do NOT set `DEVELOPMENT_API_KEY`, leave it blank.
+
+If you are running this behind a reverse proxy, make sure you do the following:
+
+1. Set `BASE_URL` to your actual proxy path
+2. Make sure the proxy forwards the original host in `X-Forwarded-Host` and `X-Forwarded-Proto`. An example nginx configuration is shown below:
+
+```nginx
+server { 
+ listen 80;
+ listen  [::]:80;
+ server_name _;
+
+ location = /registry {
+   return 302 /registry/;
+ }
+
+ location /registry/ {
+   proxy_pass http://localhost:8000/;
+   proxy_set_header X-Real-IP $remote_addr;
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header X-Forwarded-Proto $scheme;
+   proxy_set_header X-Forwarded-Host  $host;
+ }
+}
+```
+
+These are needed to provide Keycloak with the URLs which redirect back to the Registry Service.

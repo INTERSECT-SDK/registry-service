@@ -16,6 +16,7 @@ from ...models.service import Service
 from ...utils.api_keys import make_api_key
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
 from ...utils.htmx import is_htmx_request
+from ...utils.urls import url_abspath_for
 from ..templating import TEMPLATES
 
 router = APIRouter()
@@ -33,7 +34,6 @@ async def microservice_user_page(
     invalid_service: Annotated[str, Query(alias='svc')] = '',
     server_fault: Annotated[str, Query(alias='err')] = '',
 ) -> HTMLResponse:
-    logger.info('test')
     username = user[0]
     with Session(request.app.state.db) as session:
         statement = (
@@ -118,7 +118,7 @@ async def add_new_service(
         )
 
     # no Javascript detected, use the Post-Redirect-Get fallback
-    response = RedirectResponse(request.url_for('microservice_user_page'), status_code=303)
+    response = RedirectResponse(url_abspath_for(request, 'microservice_user_page'), status_code=303)
     csrf_protect.unset_csrf_cookie(response)
     return response
 
@@ -144,7 +144,7 @@ def _add_new_service_error(
 
     # No Javascript detected, use the Post-Redirect-Get fallback
     response = RedirectResponse(
-        request.url_for('microservice_user_page').include_query_params(**err_ctx), status_code=303
+        url_abspath_for(request, 'microservice_user_page', err_ctx), status_code=303
     )
     csrf_protect.unset_csrf_cookie(response)
     return response

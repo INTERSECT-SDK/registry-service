@@ -51,6 +51,10 @@ def main() -> None:
         reload=(not settings.PRODUCTION and settings.SERVER_WORKERS == 1),
         workers=settings.SERVER_WORKERS,
         root_path=settings.BASE_URL,
+        proxy_headers=settings.PRODUCTION,
+        forwarded_allow_ips='*'
+        if settings.PRODUCTION
+        else '127.0.0.1',  # This assumes that you will always
         server_header=False,
         # override Uvicorn's loggers with our own, and disable the uvicorn access logger
         log_config=None,

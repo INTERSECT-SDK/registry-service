@@ -8,6 +8,7 @@ from ...auth import get_user, session_manager
 from ...auth.definitions import LOGIN_URL, USER
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
 from ...utils.htmx import is_htmx_request
+from ...utils.urls import url_abspath_for
 from ..templating import TEMPLATES
 
 router = APIRouter()
@@ -22,7 +23,7 @@ async def login_page(
     err: Annotated[str, Query()] = '',
 ) -> HTMLResponse:
     if user is not None:
-        return RedirectResponse(request.url_for('microservice_user_page'))  # type: ignore[return-value]
+        return RedirectResponse(url_abspath_for(request, 'microservice_user_page'))  # type: ignore[return-value]
 
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
 
@@ -53,7 +54,9 @@ async def login_request(
 ) -> RedirectResponse:
     await csrf_protect.validate_csrf(request)
     if user is not None:
-        response = RedirectResponse(request.url_for('microservice_user_page'), status_code=303)
+        response = RedirectResponse(
+            url_abspath_for(request, 'microservice_user_page'), status_code=303
+        )
         csrf_protect.unset_csrf_cookie(response)
         return response
     auth_user = get_user(username)
@@ -69,13 +72,13 @@ async def login_request(
                 },
             )
         response = RedirectResponse(
-            request.url_for('login_page').include_query_params(**err_ctx), status_code=303
+            url_abspath_for(request, 'login_page', err_ctx), status_code=303
         )
         csrf_protect.unset_csrf_cookie(response)
         return response
 
     access_token = session_manager.create_access_token(data={'sub': auth_user[0]})
-    response = RedirectResponse(request.url_for('microservice_user_page'), status_code=303)
+    response = RedirectResponse(url_abspath_for(request, 'microservice_user_page'), status_code=303)
     response.set_cookie(
         session_manager.cookie_name,
         access_token,
@@ -89,7 +92,7 @@ async def login_request(
 
 @router.post('/logout', response_class=RedirectResponse, dependencies=[Depends(session_manager)])
 async def logout_request(request: Request) -> RedirectResponse:
-    response = RedirectResponse(request.url_for('login_page'), status_code=303)
+    response = RedirectResponse(url_abspath_for(request, 'login_page'), status_code=303)
     response.delete_cookie(
         session_manager.cookie_name,
         secure=True,

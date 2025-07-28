@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     1) Binds to 0.0.0.0 instead of 127.0.0.1
     2) Format logs in JSON instead of the "pretty" format
     3) Turns off uvicorn reload
+    4) Assumes that you are running Uvicorn behind a proxy, so starts passing through forwarded headers
     """
 
     SERVER_PORT: PositiveInt = 8000
@@ -49,9 +50,11 @@ class Settings(BaseSettings):
     SERVER_WORKERS: PositiveInt = 1
     """Number of workers for Uvicorn."""
     BASE_URL: StripTrailingSlash = ''
-    """Set this to '' if this is not behind a proxy, set this to your proxy's path if this is behind a proxy.
+    """Set this to '' if this is not behind a proxy, set this to your proxy's subpath if this is behind a proxy.
 
     Do not include the full URI, only include the path component.
+
+    This is mostly used to make sure the generated API documentation links are correct. See the README for more information on how the proxy should be configured.
     """
     ROOT_DIR: Path = Field(default=Path(__file__).parents[3].absolute())
     """The directory to where we execute the script from, mostly to point to shared files. This should ALWAYS be an absolute path.
