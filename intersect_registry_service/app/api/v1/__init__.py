@@ -8,5 +8,5 @@ router.include_router(general.router)
 if settings.DEVELOPMENT_API_KEY:
     from .endpoints.sdk import impl_devmode as sdk
 else:
-    from .endpoints.sdk import impl_real as sdk
+    from .endpoints.sdk import impl_real as sdk  # type: ignore[no-redef]
 router.include_router(sdk.router, prefix='/sdk', tags=['SDK'])

@@ -14,16 +14,18 @@ from ..definitions import SESSION_COOKIE_NAME, USER, IntersectNotAuthenticatedEr
 
 class CookieSessionManager:
     def __init__(self, cookie_name: str) -> None:
-        self._user_callback: partial | None = None
+        self._user_callback: Callable[[str], USER] | Callable[[str], Awaitable[USER]] | None = None
         self.cookie_name = cookie_name
 
     async def __call__(
         self,
         request: Request,
-    ) -> USER:
+    ) -> USER | None:
         if request.session:
             fingerprint_cookie = request.cookies.get(settings.SESSION_FINGERPRINT_COOKIE, None)
             token = request.session.get('user', None)
+            if not token:
+                raise IntersectNotAuthenticatedError
             fingerprint_hash = request.session.get('fingerprint_hash', None)
             if fingerprint_cookie and fingerprint_hash:
                 sha_hash = hashlib.sha256()
@@ -53,12 +55,12 @@ class CookieSessionManager:
             )
         except Exception as e:  # noqa: BLE001
             if not isinstance(e, IntersectNotAuthenticatedError):
-                logger.error(e)
+                logger.error('%s', e)
             return None
         else:
             return user
 
-    async def get_user(self, identifier: Any) -> USER:
+    async def get_user(self, identifier: str) -> USER | None:
         if self._user_callback is None:
             msg = 'Missing user_loader callback.'
             raise IntersectNotAuthenticatedError(msg)
@@ -68,17 +70,19 @@ class CookieSessionManager:
         else:
             user = await run_sync(self._user_callback, identifier)
 
-        return user
+        return user  # type: ignore[no-any-return]
 
-    def user_loader(self, *args: Any, **kwargs: Any) -> Callable | Callable[..., Awaitable]:
-        def decorator(callback: Callable | Callable[..., Awaitable]) -> Any:
+    def user_loader(
+        self, *args: Any, **kwargs: Any
+    ) -> Callable[..., USER] | Callable[..., Awaitable[USER]]:
+        def decorator(callback: Callable[..., Any] | Callable[..., Awaitable[Any]]) -> Any:
             self._user_callback = partial(callback, *args, **kwargs)
             return callback
 
         return decorator
 
 
-session_manager: SessionManager = CookieSessionManager(cookie_name=SESSION_COOKIE_NAME)
+session_manager: SessionManager = CookieSessionManager(cookie_name=SESSION_COOKIE_NAME)  # type: ignore[assignment]
 """This login manager currently uses session cookies, but can potentially use JWT.
 
 The current idea is to only use it as the authentication manager for UI endpoints, and use API keys for automated endpoints.

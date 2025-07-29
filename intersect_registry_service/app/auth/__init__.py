@@ -14,3 +14,5 @@ else:
     from .impl_rudimentary.session_manager import session_manager
 
 session_manager.user_loader()(get_user)
+
+__all__ = ['get_user', 'session_manager']

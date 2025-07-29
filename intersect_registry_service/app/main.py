@@ -65,7 +65,7 @@ app = FastAPI(
     description='Manage INTERSECT Campaigns and subscribe to messages',
     version=version('intersect-registry-service'),
     # only provide API documentation for public API URLs. Do not provide documentation for the UI URLs.
-    redoc_url='/api/redoc',
+    redoc_url='/api/',
     docs_url='/api/docs',
     openapi_url='/api/openapi.json',
     lifespan=lifespan,

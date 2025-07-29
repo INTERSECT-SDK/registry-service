@@ -77,7 +77,7 @@ async def login_redirect(request: Request) -> RedirectResponse:
     url_for = absolute_url_for(request, 'login_callback')
     if not url_for:
         return PlainTextResponse('Internal server error', status_code=500)  # type: ignore[return-value]
-    return await oauth_session.keycloak.authorize_redirect(request, url_for)
+    return await oauth_session.keycloak.authorize_redirect(request, url_for)  # type: ignore[no-any-return]
 
 
 @router.get(LOGIN_URL)

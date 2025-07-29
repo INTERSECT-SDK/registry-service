@@ -30,7 +30,7 @@ def add_logging_middleware(app: FastAPI) -> None:
         start_time = time.perf_counter_ns()
         # If the call_next raises an error, we still want to return our own 500 response,
         # so we can add headers to it (process time, request ID...)
-        response = PlainTextResponse('Internal server error', status_code=500)
+        response: Response = PlainTextResponse('Internal server error', status_code=500)
         try:
             response = await call_next(request)
         except Exception:
@@ -39,9 +39,9 @@ def add_logging_middleware(app: FastAPI) -> None:
         finally:
             process_time = time.perf_counter_ns() - start_time
             status_code = response.status_code
-            url = get_path_with_query_string(request.scope)
-            client_host = request.client.host
-            client_port = request.client.port
+            url = get_path_with_query_string(request.scope)  # type: ignore[arg-type]
+            client_host = request.client.host  # type: ignore[union-attr]
+            client_port = request.client.port  # type: ignore[union-attr]
             http_method = request.method
             http_version = request.scope['http_version']
             # Recreate the Uvicorn access log format, but add all parameters as structured information

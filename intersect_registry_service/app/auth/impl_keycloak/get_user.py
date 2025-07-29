@@ -29,6 +29,6 @@ def get_user(user_token: str) -> None | USER:
             username = username['email']
         return username, user_token  # noqa: TRY300
     except Exception as e:
-        logger.error(e)
+        logger.error('%s', e)
         raise IntersectNotAuthenticatedError from e
     return None

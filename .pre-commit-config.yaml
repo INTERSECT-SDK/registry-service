@@ -23,7 +23,7 @@ repos:
       - id: mypy
         name: MyPy
         description: use MyPy for static type checking
-        entry: pdm run lint-mypy
+        entry: pdm run mypy intersect_registry_service
         pass_filenames: false
         language: system
   - repo: https://github.com/codespell-project/codespell
