@@ -26,7 +26,6 @@ dependencies = [
     "pyjwt[crypto]>=2.10.1",
     "python-multipart>=0.0.20",
     "sqlmodel>=0.0.24",
-    "starlette>=0.46.1",
     "structlog>=25.2.0",
     "uvicorn[standard]>=0.34.2",
 ]
