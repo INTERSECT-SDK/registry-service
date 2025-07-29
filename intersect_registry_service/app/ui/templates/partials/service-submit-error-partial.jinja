@@ -1,9 +1,14 @@
-{% if svc %}
+<p id="service-submit-form-errors" class="error" hx-swap-oob="true">
+{% if err_svc %}
   {% if err %}
-  <p class="error">Unable to add service "<i>{{svc}}</i>", please try again later.</p>
+    <span>Unable to add service "<i>{{err_svc}}</i>", please try again later.</span>
   {% else %}
-  <p class="error">
-    Service "<i>{{svc}}</i>" has been taken.
-  </p>
+    <span>
+      Service "<i>{{err_svc}}</i>" has been taken.
+    </span>
   {% endif %}
+{% else %}
+  {# placeholder text to keep same amount of space allocated in DOM #}
+  <span class="invisible">N/A</span>
 {% endif %}
+</p>

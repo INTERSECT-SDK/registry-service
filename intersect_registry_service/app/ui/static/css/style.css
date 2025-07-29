@@ -70,6 +70,10 @@ th td:last-child {
 
 /* Generic */
 
+.invisible {
+  visibility: hidden;
+}
+
 .error {
   font-weight: 700;
   color: #ba000d;

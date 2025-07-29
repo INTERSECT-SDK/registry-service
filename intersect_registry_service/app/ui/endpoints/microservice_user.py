@@ -31,7 +31,7 @@ async def microservice_user_page(
     request: Request,
     user: Annotated[USER, Depends(session_manager)],
     csrf_protect: Annotated[CsrfProtect, Depends()],
-    invalid_service: Annotated[str, Query(alias='svc')] = '',
+    invalid_service: Annotated[str, Query(alias='err_svc')] = '',
     server_fault: Annotated[str, Query(alias='err')] = '',
 ) -> HTMLResponse:
     username = user[0]
@@ -55,7 +55,7 @@ async def microservice_user_page(
             'system_name': settings.SYSTEM_NAME,
             'client_api_key': settings.BROKER_CLIENT_API_KEY,
             'services': results,
-            'svc': invalid_service,
+            'err_svc': invalid_service,
             'err': server_fault,
             'username': username,
         },
@@ -114,7 +114,9 @@ async def add_new_service(
     if is_htmx_request(request):
         # Javascript is enabled, so we can return an HTML partial
         return TEMPLATES.TemplateResponse(
-            request=request, name='service-list-partial.jinja', context={'services': [new_service]}
+            request=request,
+            name='service-list-partial-oob.jinja',
+            context={'services': [new_service]},
         )
 
     # no Javascript detected, use the Post-Redirect-Get fallback
@@ -126,7 +128,7 @@ async def add_new_service(
 def _add_new_service_error(
     request: Request, csrf_protect: CsrfProtect, service_name: str, server_fault: bool
 ) -> Response:
-    err_ctx = {'svc': service_name}
+    err_ctx = {'err_svc': service_name}
     if server_fault:
         err_ctx.update({'err': '1'})
     if is_htmx_request(request):
