@@ -27,7 +27,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
-        tags: ghcr.io/INTERSECT-SDK/registry-service:latest
+        tags: ghcr.io/intersect-sdk/registry-service:latest
         push: true
 
     - name: Push tagged images
@@ -36,5 +36,5 @@ jobs:
       with:
         context: .
         tags: |
-          ghcr.io/INTERSECT-SDK/registry-service:${{ github.ref_name }}
+          ghcr.io/intersect-sdk/registry-service:${{ github.ref_name }}
         push: true
