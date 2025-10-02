@@ -22,6 +22,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Sync the project
 COPY intersect_registry_service intersect_registry_service
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --no-dev --frozen --no-editable
 
 FROM gcr.io/distroless/cc:nonroot AS runner
