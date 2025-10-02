@@ -35,22 +35,19 @@ services:
       retries: 5
       start_period: 10s
       timeout: 10s
-    network_mode: "host"
-    # ports:
-    #   - 5432:5432
+    ports:
+      - 5432:5432
     volumes:
       - 'intersect_registry_postgresql_data:/bitnami/postgresql'
-    # networks:
-    #   - intersect_registry_network
+    networks:
+      - intersect_registry_network
 
   keycloak:
-    build:
-      context: ./keycloak/
+    image: savannah.ornl.gov/rse/bitnami/keycloak:26.3.3-debian-12-r0
     container_name: keycloak
     # restart: unless-stopped
-    # ports:
-    #   - "8081:8080"
-    network_mode: "host"
+    ports:
+      - "80:8080"
     environment:
       # FEDERATE_LDAP: "true"
       # LDAP_URL: YOUR_LDAP_URL
@@ -59,18 +56,20 @@ services:
       GOOGLE_CLIENT_ID: YOUR_CLIENT_ID
       GOOGLE_SECRET: YOUR_GOOGLE_CLIENT_SECRET
       KC_DB: postgres
-      # KC_DB_URL: jdbc:postgresql://registry-database:5432/registry
-      KC_DB_URL: jdbc:postgresql://localhost:5432/registry
+      KEYCLOAK_DATABASE_HOST: registry-database
+      KEYCLOAK_DATABASE_PORT: 5432
+      KEYCLOAK_DATABASE_NAME: registry
+      KEYCLOAK_JDBC_DRIVER: postgresql
       KC_DB_PASSWORD: registry_password
       KC_DB_USERNAME: registry_username
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      HOSTNAME: localhost
+      KC_HOSTNAME: localhost
       # HTTPS: true
     depends_on:
       - database
-    # networks:
-    #   - intersect_registry_network
+    networks:
+      - intersect_registry_network
 
 # Define a network, which allows containers to communicate
 # with each other, by using their container name as a hostname
