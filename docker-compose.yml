@@ -47,7 +47,7 @@ services:
     container_name: keycloak
     # restart: unless-stopped
     ports:
-      - "80:8080"
+      - "8080:8080"
     environment:
       # FEDERATE_LDAP: "true"
       # LDAP_URL: YOUR_LDAP_URL
