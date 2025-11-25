@@ -26,9 +26,8 @@ def get_user(user_token: str) -> None | USER:
         username = user.get('preferred_username', None)
         if not username:
             # all tokens should at least have email if email scope is requested
-            username = username['email']
+            username = user['email']
         return username, user_token  # noqa: TRY300
     except Exception as e:
         logger.error('%s', e)
         raise IntersectNotAuthenticatedError from e
-    return None
