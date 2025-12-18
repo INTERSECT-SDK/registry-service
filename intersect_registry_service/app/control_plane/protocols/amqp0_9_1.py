@@ -29,7 +29,7 @@ class Amqp091ProtocolHander(AbstractProtocolHandler):
 
     The way we handle queues:
       - Services will create their initial request/response queues
-      - Each new queue will need to
+      - Each queue will be associated with a specific Service; a Service can potentially have many queues.
     """
 
     def __init__(self, settings: Settings) -> None:

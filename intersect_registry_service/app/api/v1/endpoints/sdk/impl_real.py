@@ -2,13 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Security
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
 from .....core.environment import settings
 from .....models.service import Service
 from .....utils.client_name_generator import generate_client_name
+from ...api_key import api_key_header
 from .definitions import ControlPlaneConfig, IntersectClientConfig, IntersectConfig
 
 router = APIRouter()
@@ -24,7 +25,7 @@ router = APIRouter()
 async def service_config(
     req: Request,
     service_name: Annotated[str, Query(min_length=3, max_length=63)],
-    api_key: Annotated[str, Header(alias='Authorization')],
+    api_key: Annotated[str, Security(api_key_header)],
 ) -> IntersectConfig:
     with Session(req.app.state.db) as session:
         statement = (
@@ -58,7 +59,7 @@ async def service_config(
     response_description='The response type used by INTERSECT-SDK Clients to understand how to connect to the INTERSECT ecosystem.',
 )
 async def client_config(
-    api_key: Annotated[str, Header(alias='Authorization')],
+    api_key: Annotated[str, Security(api_key_header)],
 ) -> IntersectClientConfig:
     if api_key != settings.BROKER_CLIENT_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API key in Authorization header')

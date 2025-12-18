@@ -55,7 +55,7 @@ Make sure you have UV installed ([Instructions](https://docs.astral.sh/uv/#insta
 ### Running
 
 - `docker compose up -d` - spins up the database and brokers
-- `uv run python -m intersect_registry_service`*
+- `uv run python -m intersect_registry_service`
 
 Application runs on port 8000 unless you set `SERVER_PORT`
 
@@ -79,7 +79,7 @@ All environment variables can be checked in `intersect_registry_service/app/core
 
 In order to set up a Keycloak instance for this project, `Dockerfile.keycloak` can be used to build one (or used as part of the compose project). After starting the Keycloak container, navigate to the port (http://localhost:8080 by default) and log in to the admin portal by using the default admin credentials: `admin` for the username, and `admin` for the password. After logging in, in the dropdown at the top left of the screen (that should have "master" selected by default), select "Create Realm". Use the resource file, `keycloak/realm-export.json` from this repository in the form and make sure that the name of the realm is DevRegistryKeycloak (if choosing a different name, make sure that the appropriate config options from .env.example are updated).
 
-If all you want to do is test out Keycloak, this should be sufficent. A default user with the credentials `username` and `password` is already setup; this does not utilize any third-party providers. However, if you want to test out a third-party provider, read on.
+If all you want to do is test out Keycloak, this should be sufficient. A default user with the credentials `username` and `password` is already setup; this does not utilize any third-party providers. However, if you want to test out a third-party provider, read on.
 
 After importing the realm, you can edit the registry client by clicking the the Clients page in the left hand navigation panel, and selecting `registry-service-dev`. Here you can change the redirect URL, regenerate the client secret if necessary, or manage the tokens that Keycloak provides. In order to create a new user not tied to a third party identity provider, click the Users page in the left hand navigation panel. Click the "Add user" button, and fill out the Username, email, first and last name fields. Although not all of these fields are marked as necessary, you will actually get errors after logging in if you do not fill all of them out. After creating the user, click on that user in the Users page, go to the credentials tab and set a password for that user. I would recommend making it permanent via the option in the create password dialogue if using this user for testing purposes.
 
@@ -138,7 +138,7 @@ If you are running this behind a reverse proxy, make sure you do the following:
 2. Make sure the proxy forwards the original host in `X-Forwarded-Host` and `X-Forwarded-Proto`. An example nginx configuration is shown below:
 
 ```nginx
-server { 
+server {
  listen 80;
  listen  [::]:80;
  server_name _;

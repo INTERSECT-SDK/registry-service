@@ -1,7 +1,7 @@
 [project]
 name = "intersect-registry-service"
 version = "0.1.0"
-description = "Access control layer for the INTERSECT control plane layer and data plane layer"
+description = "Core service used for generating and providing appropriate INTERSECT credentials to microservices."
 classifiers = ["Private :: Do Not Upload"]
 authors = [
     { name = "Lance-Drane", email = "dranelt@ornl.gov" },

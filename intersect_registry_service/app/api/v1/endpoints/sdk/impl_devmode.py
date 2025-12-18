@@ -2,11 +2,12 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, HTTPException, Security
 
 from .....core.definitions import get_raw_protocol, get_uri_path
 from .....core.environment import settings
 from .....utils.client_name_generator import generate_client_name
+from ...api_key import api_key_header
 from .definitions import ControlPlaneConfig, IntersectClientConfig, IntersectConfig
 
 router = APIRouter()
@@ -20,7 +21,7 @@ router = APIRouter()
     ),
 )
 async def debug_service_config(
-    api_key: Annotated[str, Header(alias='Authorization')],
+    api_key: Annotated[str, Security(api_key_header)],
 ) -> IntersectConfig:
     if api_key != settings.DEVELOPMENT_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API key in Authorization header')
@@ -46,7 +47,7 @@ async def debug_service_config(
     response_description='The response type used by INTERSECT-SDK Clients to understand how to connect to the INTERSECT ecosystem.',
 )
 async def client_config_debug(
-    api_key: Annotated[str, Header(alias='Authorization')],
+    api_key: Annotated[str, Security(api_key_header)],
 ) -> IntersectClientConfig:
     if api_key != settings.BROKER_CLIENT_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API key in Authorization header')
