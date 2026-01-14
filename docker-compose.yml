@@ -1,7 +1,7 @@
 services:
   broker:
     container_name: registry-broker
-    image: "bitnami/rabbitmq:3.13.3"
+    image: "bitnamilegacy/rabbitmq:3.13.3"
     network_mode: "host"
     # ports:
     #   - "1883:1883" # MQTT port
@@ -23,7 +23,7 @@ services:
     #   - intersect_registry_network
   database:
     container_name: registry-database
-    image: "bitnami/postgresql:17"
+    image: "bitnamilegacy/postgresql:17"
     # full list of environment variables available at https://github.com/bitnami/containers/tree/231cb510c9f39dc7100d2a0c117beaef007f5fac/bitnami/postgresql#environment-variables
     environment:
       POSTGRESQL_USERNAME: "registry_username"
