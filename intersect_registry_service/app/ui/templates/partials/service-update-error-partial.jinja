@@ -1,0 +1,8 @@
+<span id="service-update-form-errors-{{service_name}}" class="error" hx-swap-oob="true">
+    {% if err_svc_action and err_svc_update == service_name %}
+    <span><i>{{err_svc_action}}</i></span>
+    {% else %}
+    {# placeholder text to keep same amount of space allocated in DOM #}
+    <span class="invisible">N/A</span>
+    {% endif %}
+</span>

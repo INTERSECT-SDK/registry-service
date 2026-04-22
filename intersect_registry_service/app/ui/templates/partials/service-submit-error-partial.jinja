@@ -1,10 +1,10 @@
 <p id="service-submit-form-errors" class="error" hx-swap-oob="true">
-{% if err_svc %}
+{% if err_svc_add %}
   {% if err %}
-    <span>Unable to add service "<i>{{err_svc}}</i>", please try again later.</span>
+    <span>Unable to add service "<i>{{err_svc_add}}</i>", please try again later.</span>
   {% else %}
     <span>
-      Service "<i>{{err_svc}}</i>" has been taken.
+      Service "<i>{{err_svc_add}}</i>" has been taken.
     </span>
   {% endif %}
 {% else %}

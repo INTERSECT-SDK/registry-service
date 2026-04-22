@@ -30,5 +30,5 @@ def _get_html_security_headers(nonce: str) -> dict[str, str]:
 
 # these headers tend to cause issues if you're doing frontend development and reloading the page, so just turn them off
 get_html_security_headers = (
-    _get_html_security_headers if not settings.DEVELOPMENT_API_KEY else lambda _nonce: {}  # noqa: ARG005
+    _get_html_security_headers if not settings.DEVELOPMENT_API_KEY else lambda _nonce: {}
 )

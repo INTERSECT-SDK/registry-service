@@ -41,7 +41,7 @@ dev = [
     "pre-commit>=4.2.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.0",
-    "ruff==0.9.4",
+    "ruff==0.15.11",
     "types-paho-mqtt>=1.6.0.20240321",
 ]
 
@@ -55,7 +55,7 @@ pydocstyle = { convention = 'google' }
 flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
 mccabe = { max-complexity = 20 }
 pylint = { max-args = 10, max-branches = 20, max-returns = 10, max-statements = 75 }
-dummy-variable-rgx = '^(request)$' # permit "request" to be a variable name for FastAPI, even if not directly used
+dummy-variable-rgx = '^(request$|_)' # permit "request" to be a variable name for FastAPI, even if not directly used, and allow any variable beginning with '_' to be ignored
 # pyflakes and the relevant pycodestyle rules are already configured
 extend-select = [
     'C90',   # mccabe complexity

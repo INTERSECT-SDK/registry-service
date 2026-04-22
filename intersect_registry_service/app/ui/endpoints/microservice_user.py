@@ -1,9 +1,10 @@
+import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Query, Request, Response
+from fastapi import APIRouter, Depends, Form, Path, Query, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi_csrf_protect import CsrfProtect
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlmodel import Session, col, select
 
 from ...auth import session_manager
@@ -31,7 +32,9 @@ async def microservice_user_page(
     request: Request,
     user: Annotated[USER, Depends(session_manager)],
     csrf_protect: Annotated[CsrfProtect, Depends()],
-    invalid_service: Annotated[str, Query(alias='err_svc')] = '',
+    invalid_service_add: Annotated[str, Query(alias='err_svc_add')] = '',
+    invalid_service_update: Annotated[str, Query(alias='err_svc_update')] = '',
+    invalid_service_action: Annotated[str, Query(alias='err_svc_action')] = '',
     server_fault: Annotated[str, Query(alias='err')] = '',
 ) -> HTMLResponse:
     username = user[0]
@@ -55,7 +58,9 @@ async def microservice_user_page(
             'system_name': settings.SYSTEM_NAME,
             'client_api_key': settings.BROKER_CLIENT_API_KEY,
             'services': results,
-            'err_svc': invalid_service,
+            'err_svc_add': invalid_service_add,
+            'err_svc_update': invalid_service_update,
+            'err_svc_action': invalid_service_action,
             'err': server_fault,
             'username': username,
         },
@@ -69,6 +74,7 @@ async def microservice_user_page(
 async def add_new_service(
     request: Request,
     service_name: Annotated[str, Form(pattern=HIERARCHY_REGEX)],
+    csrf_token: Annotated[str, Form(alias='csrf-token')],
     user: Annotated[USER, Depends(session_manager)],
     csrf_protect: Annotated[CsrfProtect, Depends()],
 ) -> Response:
@@ -91,7 +97,7 @@ async def add_new_service(
             return _add_new_service_error(request, csrf_protect, service_name, server_fault=True)
 
     try:
-        broker_user, broker_password = request.app.state.config_manager.add_service(service_name)
+        _, broker_password = request.app.state.config_manager.add_service(service_name)
         with Session(request.app.state.db) as session:
             new_broker = Broker(broker_password=broker_password, service=new_service)
             session.add(new_broker)
@@ -116,7 +122,10 @@ async def add_new_service(
         return TEMPLATES.TemplateResponse(
             request=request,
             name='service-list-partial-oob.jinja',
-            context={'services': [new_service]},
+            context={
+                'csrf_token': csrf_token,
+                'services': [new_service],
+            },
         )
 
     # no Javascript detected, use the Post-Redirect-Get fallback
@@ -128,7 +137,7 @@ async def add_new_service(
 def _add_new_service_error(
     request: Request, csrf_protect: CsrfProtect, service_name: str, server_fault: bool
 ) -> Response:
-    err_ctx = {'err_svc': service_name}
+    err_ctx = {'err_svc_add': service_name}
     if server_fault:
         err_ctx.update({'err': '1'})
     if is_htmx_request(request):
@@ -150,3 +159,91 @@ def _add_new_service_error(
     )
     csrf_protect.unset_csrf_cookie(response)
     return response
+
+
+@router.post('/rotate/{service_name}')
+async def rotate_service_key(
+    request: Request,
+    user: Annotated[USER, Depends(session_manager)],
+    service_name: Annotated[str, Path(pattern=HIERARCHY_REGEX)],
+    csrf_token: Annotated[str, Form(alias='csrf-token')],
+    csrf_protect: Annotated[CsrfProtect, Depends()],
+) -> Response:
+    """Rotate the API key for a given service."""
+    await csrf_protect.validate_csrf(request)
+    username = user[0]
+    result = None
+    with Session(request.app.state.db) as session:
+        statement = (
+            select(Service)
+            .where(Service.service_name == service_name)
+            .where(Service.username == username)
+        )
+        try:
+            result = session.exec(statement).one()
+        except (NoResultFound, MultipleResultsFound):
+            # user error; however, this should not appear during normal usage
+            return _rotate_service_key_error(request, csrf_protect, service_name)
+        except Exception:  # noqa: BLE001
+            # server error
+            logger.exception('Error retrieving service for key rotation: %s', service_name)
+            return _rotate_service_key_error(request, csrf_protect, service_name)
+
+        result.api_key = make_api_key()
+        result.last_modified = datetime.datetime.now(tz=datetime.UTC)
+        session.add(result)
+        session.commit()
+        session.refresh(result)
+
+    if is_htmx_request(request):
+        # Javascript is enabled, so we can return an HTML partial
+        return TEMPLATES.TemplateResponse(
+            request=request,
+            name='service-list-partial-oob.jinja',
+            context={
+                'csrf_token': csrf_token,
+                'services': [result],
+            },
+        )
+
+    # no Javascript detected, use the Post-Redirect-Get fallback
+    response = RedirectResponse(url_abspath_for(request, 'microservice_user_page'), status_code=303)
+    csrf_protect.unset_csrf_cookie(response)
+    return response
+
+
+def _service_update_error(
+    request: Request,
+    csrf_protect: CsrfProtect,
+    service_name: str,
+    failure_string: str,
+) -> Response:
+    err_ctx = {'err_svc_action': failure_string, 'err_svc_update': service_name}
+    if is_htmx_request(request):
+        # Javascript is enabled, so we can return an HTML partial
+        # we are now REPLACING the error LAST CHILD of the FORM, instead of APPENDING as the FIRST CHILD of the TABLE BODY
+        err_ctx['service_name'] = service_name
+        return TEMPLATES.TemplateResponse(
+            request=request,
+            name='service-update-error-partial.jinja',
+            context=err_ctx,
+            headers={
+                'HX-Reswap': 'innerHTML',
+                'HX-Retarget': f'#service-update-form-errors-{service_name}',
+            },
+        )
+
+    # No Javascript detected, use the Post-Redirect-Get fallback
+    response = RedirectResponse(
+        url_abspath_for(request, 'microservice_user_page', err_ctx), status_code=303
+    )
+    csrf_protect.unset_csrf_cookie(response)
+    return response
+
+
+def _rotate_service_key_error(
+    request: Request, csrf_protect: CsrfProtect, service_name: str
+) -> Response:
+    return _service_update_error(
+        request, csrf_protect, service_name, failure_string='Unable to rotate API key'
+    )

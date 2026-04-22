@@ -1,7 +1,19 @@
 {% for service in services %}
-<tr>
-  <td>{{service.service_name}}</td>
+{% set service_name = service.service_name %}
+<tr id="svc-{{service_name}}">
+  <td>{{service_name}}</td>
   <td>{{service.last_modified.strftime('%Y-%m-%d %-I:%M %p (UTC)')}}</td>
   <td>{{service.api_key}}</td>
+  <td>
+    <form action="{{ url_abspath_for('rotate_service_key', service_name=service_name) }}" method="post" autocomplete="off"
+      class="rotate-key-form" hx-target="#svc-{{service_name}}" hx-swap="outerHTML"
+      hx-disabled-elt="find button">
+      <input type="hidden" name="csrf-token" value="{{ csrf_token }}" />
+      <button type="submit">Rotate API Key</button>
+    </form>
+  </td>
+  <td>
+    {% include 'service-update-error-partial.jinja' %}
+  </td>
 </tr>
 {% endfor %}

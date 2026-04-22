@@ -9,7 +9,7 @@ from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect.exceptions import CsrfProtectError
-from sqlmodel import create_engine
+from sqlmodel import create_engine, text
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api import router as api_router
@@ -39,7 +39,6 @@ async def lifespan(app: FastAPI) -> typing.AsyncGenerator[None, None]:
         logger.warning(
             'Skipping migration scripts and verifying connection. Be advised that this should only be a temporary workaround, and that ALEMBIC_RUN_MIGRATIONS should be set to True for general use cases.'
         )
-        from sqlmodel import text
 
         with app.state.db.connect() as connection:
             connection.execute(text('SELECT 1'))

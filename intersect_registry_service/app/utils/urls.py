@@ -24,7 +24,7 @@ def url_abspath_for(
     """
     url_for = request.url_for(name, **path_params)
     if query_params:
-        url_for.include_query_params(**query_params)
+        url_for = url_for.include_query_params(**query_params)
     url_str = str(url_for)
     path_position = url_str.find(
         '/', 8

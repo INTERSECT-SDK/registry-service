@@ -1,16 +1,18 @@
 """CSRF modules, this is only need if we choose to use cookies for session management."""
 
 from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import RedirectResponse
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 
 from ..core.environment import settings
+from ..utils.urls import url_abspath_for
 
 
-def csrf_protect_exception_handler(_: Request, exc: CsrfProtectError) -> JSONResponse:  # noqa: ARG001
-    # NOTE - this probably shouldn't be seen by a normal user, so this may not necessarily be the best way to handle it
-    return JSONResponse(status_code=exc.status_code, content={'detail': exc.message})
+def csrf_protect_exception_handler(request: Request, _: CsrfProtectError) -> RedirectResponse:
+    # log the user out and clear all CSRF and session tokens
+    # TODO potentially just reload the page?
+    return RedirectResponse(url_abspath_for(request, 'logout_request'), status_code=303)
 
 
 @CsrfProtect.load_config
