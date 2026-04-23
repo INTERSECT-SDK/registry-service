@@ -228,7 +228,7 @@ def _service_update_error(
             name='service-update-error-partial.jinja',
             context=err_ctx,
             headers={
-                'HX-Reswap': 'innerHTML',
+                'HX-Reswap': 'outerHTML',
                 'HX-Retarget': f'#service-update-form-errors-{service_name}',
             },
         )
