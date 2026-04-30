@@ -24,7 +24,7 @@ class AbstractBrokerHandler(Protocol):
 def get_broker_handler(settings: Settings) -> AbstractBrokerHandler:
     match settings.BROKER_APPLICATION:
         case 'rabbitmq':
-            from .rabbitmq import RabbitMQHandler
+            from .rabbitmq import RabbitMQHandler  # noqa: PLC0415
 
             return RabbitMQHandler(settings)
         case _:
