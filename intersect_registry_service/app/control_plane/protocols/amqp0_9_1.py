@@ -105,7 +105,7 @@ class Amqp091ProtocolHander(AbstractProtocolHandler):
             bind_frame: Frame = channel.queue_bind(
                 queue=actual_queue_name,
                 exchange=INTERSECT_MESSAGE_EXCHANGE,
-                routing_key=f'{self.system_name}.{service_name}.{message_type}',
+                routing_key=f'{self.system_name}.{service_name}.{message_type}.#',
             )
             logger.info('bind_frame %s', bind_frame)
 

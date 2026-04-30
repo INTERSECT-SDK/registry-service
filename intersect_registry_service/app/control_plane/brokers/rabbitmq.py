@@ -279,12 +279,12 @@ class RabbitMQHandler(AbstractBrokerHandler):
         body = {
             'exchange': INTERSECT_MESSAGE_EXCHANGE,
             'write': (
-                rf'^({self.system_name}\\.{service_or_prefix}\\.events\\.?)'
-                r'|([a-z0-9-]+\\.[a-z0-9-]+\\.(request|response)\\.?)'
+                rf'^({self.system_name}\.{service_or_prefix}\.events\.?)'
+                r'|([a-z0-9-]+\.[a-z0-9-]+\.(request|response)\.?)*'
             ),
             'read': (
                 rf'^({self.system_name}\\.{service_or_prefix}\\.(request|response)\\.?)'
-                r'|([a-z0-9-]+\\.[a-z0-9-]+\\.events\\.?)'
+                r'|([a-z0-9-]+\\.[a-z0-9-]+\\.events\\.?)*'
             ),
         }
         return json.dumps(body)
