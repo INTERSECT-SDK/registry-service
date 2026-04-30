@@ -96,25 +96,9 @@ class RabbitMQHandler(AbstractBrokerHandler):
 
         This needs to be called AFTER the INTERSECT exchange is created.
         """
-        resp = self.http_client.request(
-            'PUT',
-            f'{self._base_url}api/users/{client_username}',
-            f'{{"password":"{client_password}","tags":[]}}',
-            headers={**self.base_headers, 'Content-Type': 'application/json'},
-        )
-        if resp.status >= 400:
-            msg = f'Could not initialize the client broker user {client_username}'
-            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
-            raise Exception(msg)  # noqa: TRY002
 
-        # CLIENT PERMISSIONS:
-        # - limited to working with the INTERSECT message exchange
-        # - not allowed to configure anything
-        # - may write (publish) to any request/response channels
-        # - may read (subscribe) from any event channel
-        # - may write (publish) to your own event channel
-        # - may read (subscribe) from your own request/response channels
-        # - NOTE: clients can technically read and write to any channel of any other client, beware. WONTFIX because Clients should generally not be used in production.
+        self._edit_user(client_username, client_password, True)
+
         if self.is_amqp:
             body = self._get_rmq_permissions(CLIENT_PERMISSIONS_REGEX, False)
 
@@ -172,16 +156,7 @@ class RabbitMQHandler(AbstractBrokerHandler):
         """
         username = get_broker_username(service_name)
         password = make_broker_password()
-        resp = self.http_client.request(
-            'PUT',
-            f'{self._base_url}api/users/{username}',
-            f'{{"password":"{password}","tags":[]}}',
-        )
-        logger.debug('%s %s %s', resp.status, resp.headers, resp.data)
-        if resp.status >= 400:
-            msg = f'Could not initialize the service broker user for {service_name}'
-            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
-            raise Exception(msg)  # noqa: TRY002
+        self._edit_user(username, password, True)
 
         if self.is_amqp:
             # SERVICE PERMISSIONS:
@@ -231,6 +206,16 @@ class RabbitMQHandler(AbstractBrokerHandler):
 
         return username, password
 
+    def update_service_config(self, service_name: str) -> str:
+        """This can be called both when the user updates their credentials AND routinely by something like a cronjob
+
+        Broker passwords are not meant to be long-lasting or stored by microservices
+        """
+        username = get_broker_username(service_name)
+        password = make_broker_password()
+        self._edit_user(username, password, False)
+        return password
+
     def remove_service_config(self, service_name: str) -> None:
         """This just removes the username, we need to delete the service queue elsewhere (should be faster to do this via AMQP)"""
         username = get_broker_username(service_name)
@@ -240,6 +225,22 @@ class RabbitMQHandler(AbstractBrokerHandler):
         )
         if resp.status >= 400:
             msg = f'Could not delete the broker user for service {service_name}'
+            raise Exception(msg)  # noqa: TRY002
+
+    def _edit_user(self, username: str, password: str, new: bool) -> None:
+        """
+        RabbitMQ uses the same API for creating users and updating their passwords.
+        """
+
+        resp = self.http_client.request(
+            'PUT',
+            f'{self._base_url}api/users/{username}',
+            f'{{"password":"{password}","tags":[]}}',
+            headers={**self.base_headers, 'Content-Type': 'application/json'},
+        )
+        if resp.status >= 400:
+            msg = f'Could not {"initialize" if new else "update"} the client broker user {username}'
+            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
             raise Exception(msg)  # noqa: TRY002
 
     def _get_rmq_permissions(self, service_or_prefix: str, is_service: bool) -> str:
@@ -256,6 +257,8 @@ class RabbitMQHandler(AbstractBrokerHandler):
 
         Write: allow all by default (keep in mind: this is writing to OTHER queues).
         Read: your queues only
+
+        NOTE: clients can technically read and write to any queue of any other client, beware. WONTFIX because Clients should generally not be used in production.
         """
         regex_prefix = get_queue_name_prefix(service_or_prefix, is_service)
         body = {
@@ -275,6 +278,8 @@ class RabbitMQHandler(AbstractBrokerHandler):
         Exchange: self-explanatory, don't send messages to non-INTERSECT services
         TOPIC read: You can subscribe to your own request/response messages, and are allowed to subscribe to any event.
         TOPIC write: You can publish your own event messages, and can publish to any request/response channel.
+
+        NOTE: clients can technically read and write to any topic of any other client, beware. WONTFIX because Clients should generally not be used in production.
         """
         body = {
             'exchange': INTERSECT_MESSAGE_EXCHANGE,
