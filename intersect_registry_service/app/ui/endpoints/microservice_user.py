@@ -199,7 +199,8 @@ async def rotate_service_key(
                 try:
                     broker.last_modified = now
                     broker.broker_password = request.app.state.config_manager.update_service(
-                        service_name
+                        service_name,
+                        automatic_update=False,
                     )
                     session.add(broker)
                 except Exception:  # noqa: BLE001

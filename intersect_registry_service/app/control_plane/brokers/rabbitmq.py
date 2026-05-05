@@ -206,14 +206,28 @@ class RabbitMQHandler(AbstractBrokerHandler):
 
         return username, password
 
-    def update_service_config(self, service_name: str) -> str:
+    def update_service_config(self, service_name: str, automatic_update: bool) -> str:
         """This can be called both when the user updates their credentials AND routinely by something like a cronjob
 
+        "automatic_update" should be set to FALSE if this was initiated by the service owner or an admin, TRUE if this is from something like a cronjob
+
         Broker passwords are not meant to be long-lasting or stored by microservices
+
+        Returns the password
         """
         username = get_broker_username(service_name)
         password = make_broker_password()
         self._edit_user(username, password, False)
+
+        # NOTE - invalidates service connections IMMEDIATELY if made manually (they are also rotating their API key, so need to invalidate their entire configuration)
+        # If called by an administrator directly - IMMEDIATELY terminate connections
+        # If this is part of routine credential rotation - do NOT force clients to immediately reconnect, they can fetch new credentials once their connection is dropped
+        if not automatic_update:
+            self._close_user_connections(
+                username,
+                'Automatic connection closure, due to credential rotation by service owner',
+            )
+
         return password
 
     def remove_service_config(self, service_name: str) -> None:
@@ -240,6 +254,25 @@ class RabbitMQHandler(AbstractBrokerHandler):
         )
         if resp.status >= 400:
             msg = f'Could not {"initialize" if new else "update"} the client broker user {username}'
+            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
+            raise Exception(msg)  # noqa: TRY002
+
+    def _close_user_connections(self, username: str, reason: str) -> None:
+        """If credentials are rotated or deleted, we also need to invalidate all connections for the user.
+
+        This usually gives a 320 'Connection forced - {X_REASON_HEADER_HERE}' error string visible in the logs on the SDK Service.
+        SDK Services should call the Registry Service to get the new credentials, then reconnect to the broker.
+        """
+        resp = self.http_client.request(
+            'DELETE',
+            f'{self._base_url}api/connections/username/{username}',
+            headers={
+                **self.base_headers,
+                'X-Reason': reason,
+            },
+        )
+        if resp.status >= 400:
+            msg = f'Could not close connections for the client broker user {username}'
             logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
             raise Exception(msg)  # noqa: TRY002
 
