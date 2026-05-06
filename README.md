@@ -63,7 +63,7 @@ Application runs on port 8000 unless you set `SERVER_PORT`
 
 - Instead of using `url_for` in Jinja/HTML templates, use `url_abspath_for`. The API is exactly the same, this allows us to use absolute paths.
 - Instead of using `request.url_for(name, **path_params)`, use `intersect_registry_service.app.utils.urls.url_abspath_for(request, name, **path_params)` when redirecting with RedirectResponse to another Registry Service URL.
-   - To provide a callback URL to external services i.e. Keycloak, use `intersect_registry_service.app.utils.urls.absolute_url_for(request, name)` . _If setting settings.PRODUCTION to True, this relies on you running behind a proxy._
+  - To provide a callback URL to external services i.e. Keycloak, use `intersect_registry_service.app.utils.urls.absolute_url_for(request, name)` . _If setting settings.PRODUCTION to True, this relies on you running behind a proxy._
 
 ### Important configuration variables
 
@@ -77,20 +77,20 @@ All environment variables can be checked in `intersect_registry_service/app/core
 
 ### Setting up Keycloak Auth
 
-In order to set up a Keycloak instance for this project, `Dockerfile.keycloak` can be used to build one (or used as part of the compose project). After starting the Keycloak container, navigate to the port (http://localhost:8080 by default) and log in to the admin portal by using the default admin credentials: `admin` for the username, and `admin` for the password. After logging in, in the dropdown at the top left of the screen (that should have "master" selected by default), select "Create Realm". Use the resource file, `keycloak/realm-export.json` from this repository in the form and make sure that the name of the realm is DevRegistryKeycloak (if choosing a different name, make sure that the appropriate config options from .env.example are updated).
+In order to set up a Keycloak instance for this project, `Dockerfile.keycloak` can be used to build one (or used as part of the compose project). After starting the Keycloak container, navigate to the port (<http://localhost:8080> by default) and log in to the admin portal by using the default admin credentials: `admin` for the username, and `admin` for the password. After logging in, in the dropdown at the top left of the screen (that should have "master" selected by default), select "Create Realm". Use the resource file, `keycloak/realm-export.json` from this repository in the form and make sure that the name of the realm is DevRegistryKeycloak (if choosing a different name, make sure that the appropriate config options from .env.example are updated).
 
 If all you want to do is test out Keycloak, this should be sufficient. A default user with the credentials `username` and `password` is already setup; this does not utilize any third-party providers. However, if you want to test out a third-party provider, read on.
 
-After importing the realm, you can edit the registry client by clicking the the Clients page in the left hand navigation panel, and selecting `registry-service-dev`. Here you can change the redirect URL, regenerate the client secret if necessary, or manage the tokens that Keycloak provides. In order to create a new user not tied to a third party identity provider, click the Users page in the left hand navigation panel. Click the "Add user" button, and fill out the Username, email, first and last name fields. Although not all of these fields are marked as necessary, you will actually get errors after logging in if you do not fill all of them out. After creating the user, click on that user in the Users page, go to the credentials tab and set a password for that user. I would recommend making it permanent via the option in the create password dialogue if using this user for testing purposes.
+After importing the realm, you can edit the registry client by clicking the Clients page in the left hand navigation panel, and selecting `registry-service-dev`. Here you can change the redirect URL, regenerate the client secret if necessary, or manage the tokens that Keycloak provides. In order to create a new user not tied to a third party identity provider, click the Users page in the left hand navigation panel. Click the "Add user" button, and fill out the Username, email, first and last name fields. Although not all of these fields are marked as necessary, you will actually get errors after logging in if you do not fill all of them out. After creating the user, click on that user in the Users page, go to the credentials tab and set a password for that user. I would recommend making it permanent via the option in the create password dialogue if using this user for testing purposes.
 
 In order to manage third party providers (Google should be provided by default), click the Identity Providers page in the left hand navigation panel under the Configure heading. Here, you can add third party identity providers. You'll need a client ID and secret from said provider to put as part of the configuration in Keycloak. The redirect URL will actually be generated here in Keycloak, and you will use the value you see in Keycloak in your identity provider's client configuration as the redirect URL there. So basically: Identity Provider provides Client ID and Secret -> You set Client ID and Secret in Keycloak. Keycloak provides Redirect URL -> You set Redirect URL in Identity Provider.
 
 #### Things to remember when configuring a Keycloak Realm
 
 - Be sure to set the realm client's `"redirectUris"` to the following (replace `${BASE_URL}` with the actual URL, it's not a template):
-   - `${BASE_URL}` (root URL, normally requires auth on the Registry Service side)
-   - `${BASE_URL}/login` (login page, redirect after logging out)
-   - `${BASE_URL}/login/callback` (redirect after logging in, )
+  - `${BASE_URL}` (root URL, normally requires auth on the Registry Service side)
+  - `${BASE_URL}/login` (login page, redirect after logging out)
+  - `${BASE_URL}/login/callback` (redirect after logging in, )
 
 If the login endpoints are ever changed, you will need to adjust them accordingly in the realm config file.
 
@@ -113,7 +113,7 @@ Whenever you change a file in `intersect_registry_service/models` which is meant
 
 1. import the file in `migrations/env.py` (or just export it in `models/__init__.py` and let the `*` import take care of it)
 2. run `uv run alembic revision --autogenerate -m "<YOUR_MESSAGE_HERE>"`
-3. Make sure you read https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect and fix things it can't detect.
+3. Make sure you read <https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect> and fix things it can't detect.
 
 From there, you can do one of two things:
 
@@ -129,6 +129,7 @@ To generate SQL output (instead of directly applying changes to a database), add
 All environment variables can be checked in `intersect_registry_service/app/core/environment.py`, any class value of `Settings` in SCREAMING_SNAKE_CASE is an environment variable.
 
 Some notes:
+
 - make sure you set `AUTH_IMPLEMENTATION` to `keycloak` in any serious deployment setup
 - do NOT set `DEVELOPMENT_API_KEY`, leave it blank.
 

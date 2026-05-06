@@ -23,8 +23,10 @@ def _get_html_security_headers(nonce: str) -> dict[str, str]:
     return {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
+        # make sure that we can see the full referrer query string when possible, note that users may set their browsers to send no referrer
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
         # form-action is needed for non-Javascript requests, connect-src is needed for HTMX
-        'Content-Security-Policy': f"default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; connect-src 'self'; script-src 'nonce-{nonce}'; style-src 'nonce-{nonce}'; style-src-elem 'nonce-{nonce}'; style-src-attr 'nonce-{nonce}'; img-src 'self'",
+        'Content-Security-Policy': f"default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; connect-src 'self' {settings.KEYCLOAK_REALM_BASE_URL}/; script-src 'nonce-{nonce}'; style-src 'nonce-{nonce}'; style-src-elem 'nonce-{nonce}'; style-src-attr 'nonce-{nonce}'; img-src 'self'",
     }
 
 

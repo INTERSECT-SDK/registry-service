@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, Form, Query, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi_csrf_protect import CsrfProtect
 
 from ...auth import get_user, session_manager
 from ...auth.definitions import LOGIN_URL, USER
 from ...utils.html_security_headers import get_html_security_headers, get_nonce
-from ...utils.htmx import is_htmx_request
+from ...utils.htmx import do_universal_redirect, is_htmx_request
 from ...utils.urls import url_abspath_for
 from ..templating import TEMPLATES
 
@@ -90,9 +90,13 @@ async def login_request(
     return response
 
 
-@router.post('/logout', response_class=RedirectResponse, dependencies=[Depends(session_manager)])
-async def logout_request(request: Request) -> RedirectResponse:
-    response = RedirectResponse(url_abspath_for(request, 'login_page'), status_code=303)
+@router.post(
+    '/logout',
+    response_class=Response,
+    dependencies=[Depends(session_manager)],
+)
+async def logout_request(request: Request) -> Response:
+    response = do_universal_redirect(request, url_abspath_for(request, 'login_page'))
     response.delete_cookie(
         session_manager.cookie_name,
         secure=True,
