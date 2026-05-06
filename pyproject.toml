@@ -4,30 +4,30 @@ version = "0.1.0"
 description = "Core service used for generating and providing appropriate INTERSECT credentials to microservices."
 classifiers = ["Private :: Do Not Upload"]
 authors = [
-    { name = "Lance-Drane", email = "dranelt@ornl.gov" },
-    { name = "Greg-Cage", email = "cagege@ornl.gov"},
+  { name = "Lance-Drane", email = "dranelt@ornl.gov" },
+  { name = "Greg-Cage", email = "cagege@ornl.gov" },
 ]
 requires-python = ">=3.12,<4.0"
 #license = { text = "BSD-3-Clause" }
 dependencies = [
-    "alembic>=1.15.2",
-    "asgi-correlation-id>=4.3.4",
-    "authlib>=1.6.9",
-    "fastapi>=0.115.12",
-    "fastapi-csrf-protect>=1.0.2",
-    "fastapi-login>=1.10.3",
-    "httpx>=0.28.1",
-    "jinja2>=3.1.6",
-    "minio>=7.2.15",
-    "paho-mqtt>=2.1.0",
-    "pika>=1.3.2",
-    "psycopg[binary]>=3.2.6", # TODO should ideally use psycopg[c] and potentially an async driver
-    "pydantic-settings>=2.8.1",
-    "pyjwt[crypto]>=2.12.1",
-    "python-multipart>=0.0.20",
-    "sqlmodel>=0.0.24",
-    "structlog>=25.2.0",
-    "uvicorn[standard]>=0.34.2",
+  "alembic>=1.15.2",
+  "asgi-correlation-id>=4.3.4",
+  "authlib>=1.6.11",
+  "fastapi>=0.115.12",
+  "fastapi-csrf-protect>=1.0.2",
+  "fastapi-login>=1.10.3",
+  "httpx>=0.28.1",
+  "jinja2>=3.1.6",
+  "minio>=7.2.15",
+  "paho-mqtt>=2.1.0",
+  "pika>=1.3.2",
+  "psycopg[binary]>=3.2.6",      # TODO should ideally use psycopg[c] and potentially an async driver
+  "pydantic-settings>=2.8.1",
+  "pyjwt[crypto]>=2.12.1",
+  "python-multipart>=0.0.26",
+  "sqlmodel>=0.0.24",
+  "structlog>=25.2.0",
+  "uvicorn[standard]>=0.34.2",
 ]
 
 [build-system]
@@ -36,13 +36,12 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "codespell>=2.4.1",
-    "mypy>=1.15.0",
-    "pre-commit>=4.2.0",
-    "pytest>=8.3.5",
-    "pytest-cov>=6.1.0",
-    "ruff==0.15.11",
-    "types-paho-mqtt>=1.6.0.20240321",
+  "codespell>=2.4.1",
+  "mypy>=1.15.0",
+  "pre-commit>=4.2.0",
+  "pytest>=9.0.3",
+  "pytest-cov>=6.1.0",
+  "ruff==0.15.11",
 ]
 
 [tool.ruff]
@@ -55,81 +54,81 @@ pydocstyle = { convention = 'google' }
 flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
 mccabe = { max-complexity = 20 }
 pylint = { max-args = 10, max-branches = 20, max-returns = 10, max-statements = 75 }
-dummy-variable-rgx = '^(request$|_)' # permit "request" to be a variable name for FastAPI, even if not directly used, and allow any variable beginning with '_' to be ignored
+dummy-variable-rgx = '^(request$|_)'                                                 # permit "request" to be a variable name for FastAPI, even if not directly used, and allow any variable beginning with '_' to be ignored
 # pyflakes and the relevant pycodestyle rules are already configured
 extend-select = [
-    'C90',   # mccabe complexity
-    'I',     # isort
-    'N',     # pep8-naming
-    'UP',    # pyupgrade
-    'YTT',   # flake8-2020
-    'ANN',   # flake8-annotations
-    'ASYNC', # flake8-async
-    'S',     # flake8-bandit
-    'BLE',   # flake8-blind-except
-    'B',     # flake8-bugbear
-    'A',     # flake8-builtins
-    'COM',   # flake8-commas
-    'C4',    # flake8-comprehensions
-    'DTZ',   # flake8-datetimez
-    'T10',   # flake8-debugger
-    'EM',    # flake8-error-message
-    'FA',    # flake8-future-annotations
-    'ISC',   # flake8-implicit-string-concat
-    'ICN',   # flake8-import-conventions
-    'G',     # flake8-logging-format
-    'INP',   # flake8-no-pep420
-    'PIE',   # flake8-PIE
-    'T20',   # flake8-T20
-    'PYI',   # flake8-pyi
-    'PT',    # flake8-pytest-style
-    'Q',     # flake8-quotes
-    'RSE',   # flake8-raise
-    'RET',   # flake8-return
-    'SLF',   # flake8-self
-    'SLOT',  # flake8-slots
-    'SIM',   # flake8-simplify
-    'TCH',   # flake8-type-checking
-    'ARG',   # flake8-unused-arguments
-    'PTH',   # flake8-use-pathlib
-    'PGH',   # pygrep-hooks
-    'PL',    # pylint
-    'TRY',   # tryceratops
-    'FLY',   # flynt
-    'RUF',   # RUFF additional rules
-    'FAST',  # FastAPI
+  'C90',   # mccabe complexity
+  'I',     # isort
+  'N',     # pep8-naming
+  'UP',    # pyupgrade
+  'YTT',   # flake8-2020
+  'ANN',   # flake8-annotations
+  'ASYNC', # flake8-async
+  'S',     # flake8-bandit
+  'BLE',   # flake8-blind-except
+  'B',     # flake8-bugbear
+  'A',     # flake8-builtins
+  'COM',   # flake8-commas
+  'C4',    # flake8-comprehensions
+  'DTZ',   # flake8-datetimez
+  'T10',   # flake8-debugger
+  'EM',    # flake8-error-message
+  'FA',    # flake8-future-annotations
+  'ISC',   # flake8-implicit-string-concat
+  'ICN',   # flake8-import-conventions
+  'G',     # flake8-logging-format
+  'INP',   # flake8-no-pep420
+  'PIE',   # flake8-PIE
+  'T20',   # flake8-T20
+  'PYI',   # flake8-pyi
+  'PT',    # flake8-pytest-style
+  'Q',     # flake8-quotes
+  'RSE',   # flake8-raise
+  'RET',   # flake8-return
+  'SLF',   # flake8-self
+  'SLOT',  # flake8-slots
+  'SIM',   # flake8-simplify
+  'TCH',   # flake8-type-checking
+  'ARG',   # flake8-unused-arguments
+  'PTH',   # flake8-use-pathlib
+  'PGH',   # pygrep-hooks
+  'PL',    # pylint
+  'TRY',   # tryceratops
+  'FLY',   # flynt
+  'RUF',   # RUFF additional rules
+  'FAST',  # FastAPI
 ]
 # If you're seeking to disable a rule, first consider whether the rule is overbearing, or if it should only be turned off for your usecase.
 ignore = [
-    'COM812',  # formatter, handled by Ruff format
-    'ISC001',  # formatter, handled by Ruff format
-    'SIM105',  # "with contextlib.suppress():" is slower than try-except-pass
-    'ANN401',  # allow explicit "Any" typing, use with care
-    'PLR2004', # allow "magic numbers"
+  'COM812',  # formatter, handled by Ruff format
+  'ISC001',  # formatter, handled by Ruff format
+  'SIM105',  # "with contextlib.suppress():" is slower than try-except-pass
+  'ANN401',  # allow explicit "Any" typing, use with care
+  'PLR2004', # allow "magic numbers"
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
 '__init__.py' = ['F401'] # __init__.py commonly has unused imports
 'docs/*' = [
-    'D',      # the documentation folder does not need documentation
-    'INP001', # docs are not a namespace package
+  'D',      # the documentation folder does not need documentation
+  'INP001', # docs are not a namespace package
 ]
 'intersect_registry_service/app/*' = [
-    'INP001', # not a namespace package
+  'INP001', # not a namespace package
 ]
 'migrations/*' = [
-    'INP001', # implicit namespace package OK
-    'N999',   # allow generated module names
+  'INP001', # implicit namespace package OK
+  'N999',   # allow generated module names
 ]
 'tests/*' = [
-    'S101',   # allow assert statements in tests
-    'S106',   # don't care about credentials in tests
-    'S311',   # don't care about cryptographic security in tests
-    'SLF001', # allow private member access in tests
-    'ANN',    # tests in general don't need types, unless they are runtime types.
-    'ARG',    # allow unused parameters in tests
-    'D',      # ignore documentation in tests
-    'FA100',  # tests frequently use runtime typing annotations
+  'S101',   # allow assert statements in tests
+  'S106',   # don't care about credentials in tests
+  'S311',   # don't care about cryptographic security in tests
+  'SLF001', # allow private member access in tests
+  'ANN',    # tests in general don't need types, unless they are runtime types.
+  'ARG',    # allow unused parameters in tests
+  'D',      # ignore documentation in tests
+  'FA100',  # tests frequently use runtime typing annotations
 ]
 
 # see https://mypy.readthedocs.io/en/stable/config_file.html for a complete reference
@@ -151,7 +150,7 @@ addopts = "-ra"
 
 [tool.coverage.report]
 omit = [
-    '*__init__*', # __init__ files should just re-export other classes and functions
+  '*__init__*', # __init__ files should just re-export other classes and functions
 ]
 exclude_also = [
   'pragma: no-cover',              # standard
