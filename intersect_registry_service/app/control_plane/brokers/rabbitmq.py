@@ -1,16 +1,53 @@
+"""
+Search https://github.com/rabbitmq/rabbitmq-server/blob/b1f3d4bc3683fbb2964a5472f5efcb31839e80a0/deps/rabbit/src/rabbit_channel.erl
+specifically (check_read check_write check_config) functions
+
+Permissions here only apply for dynamically added microservices, core services may or may not have additional permissions.
+
+URI logic is:
+
+{SYSTEM}.{SERVICE}.{events|request|response|lifecycle}.{OTHER_ADDITIONAL_INFORMATION}
+
+- SYSTEM = anything attached to this broker
+- SERVICE = A namespace of a microservice in the system, reserved by the registry service
+- MESSAGE_TYPE = one of {events, request, response, lifecycle}
+- The INTERSECT-SDK suffix marked by {OTHER_ADDITIONAL_INFORMATION} may change, this is not important to the registry service
+
+SYSTEM and SERVICE are enough to actually form a unique URI to a given microservice.
+MESSAGE_TYPE is enough to determine how a message can be handled.
+
+Rules:
+    - everything uses the same exchange (may change this for MQTT)
+    - configuration is always done on the Registry Service
+    - {SYSTEM}.{SERVICE} is a sufficient URI to a given microservice
+    - Anyone can write to a Service or Client's request/response channel, but only that entity may read it.
+    - Anyone can read a Service's events channel, but only that Service may write to it.
+"""
+
 import base64
+import json
 
 import urllib3
 
-from ...core.definitions import INTERSECT_MESSAGE_EXCHANGE
+from ...core.definitions import (
+    INTERSECT_MESSAGE_EXCHANGE,
+    INTERSECT_MESSAGE_TYPES,
+)
 from ...core.environment import Settings
 from ...core.log_config import logger
-from ...utils.broker_credentials import get_broker_username, make_broker_password
+from ...utils.broker_credentials import (
+    get_broker_username,
+    make_broker_password,
+)
 from ...utils.client_name_generator import CLIENT_PREFIX
+from ..get_queue_name import get_queue_name_prefix
 from . import AbstractBrokerHandler
 
 RABBITMQ_VHOST = '%2F'
 """We use the same VHOST throughout RabbitMQ"""
+
+CLIENT_PERMISSIONS_REGEX = f'{CLIENT_PREFIX}[0-9a-f-]{{36}}'
+"""This is a Client's 'service name', but they are dynamically and automatically generated at runtime."""
 
 
 class RabbitMQHandler(AbstractBrokerHandler):
@@ -28,7 +65,7 @@ class RabbitMQHandler(AbstractBrokerHandler):
             raise Exception(msg)  # noqa: TRY002
         self.is_amqp = settings.BROKER_PROTOCOL == 'amqp0.9.1'
         """Topic Authorization will probably remain the same across all protocols, but AMQP uses the normal ACL layer differently (the other protocols generate names).
-        
+
         See: https://www.rabbitmq.com/docs/access-control#topic-authorisation
         """
         self.system_name = settings.SYSTEM_NAME
@@ -36,7 +73,10 @@ class RabbitMQHandler(AbstractBrokerHandler):
         if self._base_url[-1] != '/':
             self._base_url += '/'
         basic_auth = base64.b64encode(
-            bytes(f'{settings.BROKER_ROOT_USERNAME}:{settings.BROKER_ROOT_PASSWORD}', 'utf-8')
+            bytes(
+                f'{settings.BROKER_ROOT_USERNAME}:{settings.BROKER_ROOT_PASSWORD}',
+                'utf-8',
+            )
         ).decode()
         self.base_headers = {
             'Authorization': f'Basic {basic_auth}',
@@ -48,38 +88,48 @@ class RabbitMQHandler(AbstractBrokerHandler):
     def initialize_broker(self, client_username: str, client_password: str) -> None:
         """TODO - this should happen entirely on the BROKER
 
+        though it is nice to do it here so we don't have to modify the broker configuration
+
         Attempts to:
           - create the Client user
           - set permissions on the Client user
 
         This needs to be called AFTER the INTERSECT exchange is created.
         """
-        resp = self.http_client.request(
-            'PUT',
-            f'{self._base_url}api/users/{client_username}',
-            f'{{"password":"{client_password}","tags":[]}}',
-            headers={**self.base_headers, 'Content-Type': 'application/json'},
-        )
-        if resp.status >= 400:
-            msg = f'Could not initialize the client broker user {client_username}'
-            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
-            raise Exception(msg)  # noqa: TRY002
 
-        # CLIENT PERMISSIONS:
-        # - limited to working with the INTERSECT message exchange
-        # - not allowed to configure anything
-        # - may write (publish) to any request/response channels
-        # - may read (subscribe) from any event channel
-        # - may write (publish) to your own event channel
-        # - may read (subscribe) from your own request/response channels
-        # - NOTE: clients can technically read and write to any channel of any other client, beware. WONTFIX because Clients should generally not be used in production.
+        self._edit_user(client_username, client_password, True)
+
         if self.is_amqp:
-            body = rf'{{"exchange":"{INTERSECT_MESSAGE_EXCHANGE}","configure":"^$","write":"^({self.system_name}\\.{CLIENT_PREFIX}.*|.*\\.request|.*\\.response)$","read":"^({self.system_name}\\.{CLIENT_PREFIX}.*|.*\\.events)$"}}'
+            body = self._get_rmq_permissions(CLIENT_PERMISSIONS_REGEX, False)
+
+            ### permissions
+            resp = self.http_client.request(
+                'PUT',
+                f'{self._base_url}api/permissions/{RABBITMQ_VHOST}/{client_username}',
+                body,
+                headers={
+                    **self.base_headers,
+                    'Content-Type': 'application/json',
+                },
+            )
+
+            if resp.status >= 400:
+                msg = (
+                    f'Could not set topic permissions for the client broker user {client_username}'
+                )
+                logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
+                raise Exception(msg)  # noqa: TRY002
+
+            ### topic permissions
+            body = self._get_rmq_topic_permissions(CLIENT_PERMISSIONS_REGEX)
             resp = self.http_client.request(
                 'PUT',
                 f'{self._base_url}api/topic-permissions/{RABBITMQ_VHOST}/{client_username}',
                 body,
-                headers={**self.base_headers, 'Content-Type': 'application/json'},
+                headers={
+                    **self.base_headers,
+                    'Content-Type': 'application/json',
+                },
             )
 
             if resp.status >= 400:
@@ -106,16 +156,7 @@ class RabbitMQHandler(AbstractBrokerHandler):
         """
         username = get_broker_username(service_name)
         password = make_broker_password()
-        resp = self.http_client.request(
-            'PUT',
-            f'{self._base_url}api/users/{username}',
-            f'{{"password":"{password}","tags":[]}}',
-        )
-        logger.debug('%s %s %s', resp.status, resp.headers, resp.data)
-        if resp.status >= 400:
-            msg = f'Could not initialize the service broker user for {service_name}'
-            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
-            raise Exception(msg)  # noqa: TRY002
+        self._edit_user(username, password, True)
 
         if self.is_amqp:
             # SERVICE PERMISSIONS:
@@ -124,23 +165,70 @@ class RabbitMQHandler(AbstractBrokerHandler):
             # - may write (publish) to any request/response channels (TODO may want to restrict this to specific endpoints through OAuth scopes determined by Service user later)
             # - may read (subscribe) from any event channel (TODO may want to restrict this to specific events through OAuth scopes determined by Service user later)
             # - may read/write to any of your own channels
-            body = rf'{{"exchange":"{INTERSECT_MESSAGE_EXCHANGE}","configure":"^$","write":"^({self.system_name}\\.{service_name}\\..*|.*\\.request|.*\\.response)$","read":"^({self.system_name}\\.{service_name}\\..*|.*\\.events)$"}}'
+            body = self._get_rmq_permissions(service_name, True)
+
+            # permissions
+
+            resp = self.http_client.request(
+                'PUT',
+                f'{self._base_url}api/permissions/{RABBITMQ_VHOST}/{username}',
+                body,
+                headers={
+                    **self.base_headers,
+                    'Content-Type': 'application/json',
+                },
+            )
+            logger.debug('%s %s %s', resp.status, resp.headers, resp.data)
+            if resp.status >= 400:
+                msg = f'Could not set topic permissions for the service broker user {service_name}'
+                logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
+                raise Exception(msg)  # noqa: TRY002
+
+            ### topic permissions
+            body = self._get_rmq_topic_permissions(service_name)
             resp = self.http_client.request(
                 'PUT',
                 f'{self._base_url}api/topic-permissions/{RABBITMQ_VHOST}/{username}',
                 body,
-                headers={**self.base_headers, 'Content-Type': 'application/json'},
+                headers={
+                    **self.base_headers,
+                    'Content-Type': 'application/json',
+                },
             )
             logger.debug('%s %s %s', resp.status, resp.headers, resp.data)
             if resp.status >= 400:
-                msg = f'Could not set permissions for the service broker user {service_name}'
+                msg = f'Could not set topic permissions for the service broker user {service_name}'
                 logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
                 raise Exception(msg)  # noqa: TRY002
         else:
-            # TODO figure out how things are generated on the MQTT side
+            # TODO figure out how things are generated on the MQTT side, looks like it's just a matter of tweaking queue names and exchanges
             raise NotImplementedError
 
         return username, password
+
+    def update_service_config(self, service_name: str, automatic_update: bool) -> str:
+        """This can be called both when the user updates their credentials AND routinely by something like a cronjob
+
+        "automatic_update" should be set to FALSE if this was initiated by the service owner or an admin, TRUE if this is from something like a cronjob
+
+        Broker passwords are not meant to be long-lasting or stored by microservices
+
+        Returns the password
+        """
+        username = get_broker_username(service_name)
+        password = make_broker_password()
+        self._edit_user(username, password, False)
+
+        # NOTE - invalidates service connections IMMEDIATELY if made manually (they are also rotating their API key, so need to invalidate their entire configuration)
+        # If called by an administrator directly - IMMEDIATELY terminate connections
+        # If this is part of routine credential rotation - do NOT force clients to immediately reconnect, they can fetch new credentials once their connection is dropped
+        if not automatic_update:
+            self._close_user_connections(
+                username,
+                'Automatic connection closure, due to credential rotation by service owner',
+            )
+
+        return password
 
     def remove_service_config(self, service_name: str) -> None:
         """This just removes the username, we need to delete the service queue elsewhere (should be faster to do this via AMQP)"""
@@ -152,3 +240,89 @@ class RabbitMQHandler(AbstractBrokerHandler):
         if resp.status >= 400:
             msg = f'Could not delete the broker user for service {service_name}'
             raise Exception(msg)  # noqa: TRY002
+
+    def _edit_user(self, username: str, password: str, new: bool) -> None:
+        """
+        RabbitMQ uses the same API for creating users and updating their passwords.
+        """
+
+        resp = self.http_client.request(
+            'PUT',
+            f'{self._base_url}api/users/{username}',
+            f'{{"password":"{password}","tags":[]}}',
+            headers={**self.base_headers, 'Content-Type': 'application/json'},
+        )
+        if resp.status >= 400:
+            msg = f'Could not {"initialize" if new else "update"} the client broker user {username}'
+            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
+            raise Exception(msg)  # noqa: TRY002
+
+    def _close_user_connections(self, username: str, reason: str) -> None:
+        """If credentials are rotated or deleted, we also need to invalidate all connections for the user.
+
+        This usually gives a 320 'Connection forced - {X_REASON_HEADER_HERE}' error string visible in the logs on the SDK Service.
+        SDK Services should call the Registry Service to get the new credentials, then reconnect to the broker.
+        """
+        resp = self.http_client.request(
+            'DELETE',
+            f'{self._base_url}api/connections/username/{username}',
+            headers={
+                **self.base_headers,
+                'X-Reason': reason,
+            },
+        )
+        if resp.status >= 400:
+            msg = f'Could not close connections for the client broker user {username}'
+            logger.error('%s %s %s %s', msg, resp.status, resp.headers, resp.data)
+            raise Exception(msg)  # noqa: TRY002
+
+    def _get_rmq_permissions(self, service_or_prefix: str, is_service: bool) -> str:
+        """Note contrast to TOPIC permissions
+
+        The name regex matches the names of the queues.
+
+        Configure: COMPLETELY disabled, as it would only used for:
+            - non-passive exchange.declare
+            - non-passive queue.declare
+            - queue.delete
+            - exchange.delete
+        These are always managed by the Registry Service.
+
+        Write: allow all by default (keep in mind: this is writing to OTHER queues).
+        Read: your queues only
+
+        NOTE: clients can technically read and write to any queue of any other client, beware. WONTFIX because Clients should generally not be used in production.
+        """
+        regex_prefix = get_queue_name_prefix(service_or_prefix, is_service)
+        body = {
+            'configure': '^$',
+            'write': '.*',
+            'read': f'^{regex_prefix}({"|".join(INTERSECT_MESSAGE_TYPES)})',
+        }
+        return json.dumps(body)
+
+    def _get_rmq_topic_permissions(self, service_or_prefix: str) -> str:
+        """Note contrast to regular permissions
+
+        These are meant to restrict the allowed topics which can be posted on.
+        We only care about the prefixes for now, topic suffixes are deliberately left extensible.
+        (For example, events also have a {capability}/{event_name} syntax tree, but this is not the concern of authorization.)
+
+        Exchange: self-explanatory, don't send messages to non-INTERSECT services
+        TOPIC read: You can subscribe to your own request/response messages, and are allowed to subscribe to any event.
+        TOPIC write: You can publish your own event messages, and can publish to any request/response channel.
+
+        NOTE: clients can technically read and write to any topic of any other client, beware. WONTFIX because Clients should generally not be used in production.
+        """
+        body = {
+            'exchange': INTERSECT_MESSAGE_EXCHANGE,
+            'write': (
+                rf'^({self.system_name}\.{service_or_prefix}\.events\.?)'
+                r'|([a-z0-9-]+\.[a-z0-9-]+\.(request|response)\.?)*'
+            ),
+            'read': (
+                rf'^({self.system_name}\\.{service_or_prefix}\\.(request|response)\\.?)'
+                r'|([a-z0-9-]+\\.[a-z0-9-]+\\.events\\.?)*'
+            ),
+        }
+        return json.dumps(body)

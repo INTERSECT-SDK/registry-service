@@ -10,6 +10,7 @@ class AbstractBrokerHandler(Protocol):
     The broker implementation determines:
       - how we create microservice users
       - how we add permissions to these users
+      - how we update/remove these users
     """
 
     def initialize_broker(self, client_username: str, client_password: str) -> None:
@@ -18,13 +19,15 @@ class AbstractBrokerHandler(Protocol):
 
     def initialize_service_config(self, service_name: str) -> tuple[str, str]: ...
 
+    def update_service_config(self, service_name: str, automatic_update: bool) -> str: ...
+
     def remove_service_config(self, service_name: str) -> None: ...
 
 
 def get_broker_handler(settings: Settings) -> AbstractBrokerHandler:
     match settings.BROKER_APPLICATION:
         case 'rabbitmq':
-            from .rabbitmq import RabbitMQHandler
+            from .rabbitmq import RabbitMQHandler  # noqa: PLC0415
 
             return RabbitMQHandler(settings)
         case _:

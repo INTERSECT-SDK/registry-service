@@ -20,3 +20,7 @@ class ConfigurationManager:
         """Returns: generated username and password for the broker, to be used with that service"""
         self.protocol_handler.initialize_service_config(service_name)
         return self.broker_handler.initialize_service_config(service_name)
+
+    def update_service(self, service_name: str, automatic_update: bool) -> str:
+        """Returns: the updated password the broker should use"""
+        return self.broker_handler.update_service_config(service_name, automatic_update)

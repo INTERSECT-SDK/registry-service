@@ -1,6 +1,6 @@
 """This module consists of core definitions which are meant to transcend the entire application"""
 
-from typing import Literal
+from typing import Literal, get_args
 
 BrokerProtocol = Literal['amqp0.9.1', 'mqtt5.0']
 """PubSub protocols we support."""
@@ -11,20 +11,11 @@ BrokerApplication = Literal['rabbitmq']
 INTERSECT_MESSAGE_EXCHANGE = 'intersect-messages'
 """Currently, this is just used for the name of the message exchange on RabbitMQ."""
 
-INTERSECT_SERVICE_SUBSCRIPTION_TYPES = (
-    'request',
-    'response',
-)
-"""SDK Services will need to subscribe to these queues, and only the SDK Service is allowed to subscribe to these queues."""
-
-INTERSECT_SERVICE_PUBLISH_TYPES = (
-    'events',
-    'lifecycle',
-)
-"""SDK Services are the only broker users allowed to publish to these queues."""
-
-INTERSECT_CLIENT_MESSAGE_TYPES = ('response',)
-"""SDK Clients will need their own dedicated queues associated for these message types."""
+INTERSECT_MESSAGE_TYPE = Literal['request', 'response', 'events']
+"""A type of message sent by INTERSECT."""
+# excluding Lifecycle Messages, those are only parsed by core services
+INTERSECT_MESSAGE_TYPES = get_args(INTERSECT_MESSAGE_TYPE)
+"""These are the types of messages sent by INTERSECT, each message type needs its own queue."""
 
 
 def get_raw_protocol(proto: BrokerProtocol, tls: bool = False) -> str:

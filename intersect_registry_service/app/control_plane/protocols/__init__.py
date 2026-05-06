@@ -16,11 +16,11 @@ class AbstractProtocolHandler(Protocol):
 def get_protocol_handler(settings: Settings) -> AbstractProtocolHandler:
     match settings.BROKER_PROTOCOL:
         case 'amqp0.9.1':
-            from .amqp0_9_1 import Amqp091ProtocolHander
+            from .amqp0_9_1 import Amqp091ProtocolHander  # noqa: PLC0415
 
             return Amqp091ProtocolHander(settings)
         case 'mqtt5.0':
-            from .mqtt5_0 import Mqtt5ProtocolHandler
+            from .mqtt5_0 import Mqtt5ProtocolHandler  # noqa: PLC0415
 
             return Mqtt5ProtocolHandler(settings)
         case _:

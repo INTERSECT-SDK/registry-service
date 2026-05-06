@@ -6,10 +6,9 @@ from typing import Annotated
 
 import jwt
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from starlette.config import Config
-from starlette.requests import Request
 
 from ...auth import session_manager
 from ...auth.definitions import LOGIN_URL, USER
@@ -99,8 +98,8 @@ async def login_page(
     )
 
 
-@router.post('/logout', response_class=RedirectResponse, dependencies=[Depends(session_manager)])
-async def logout_request(request: Request) -> RedirectResponse:
+@router.post('/logout', response_class=Response, dependencies=[Depends(session_manager)])
+async def logout_request(request: Request) -> Response:
     user = request.session.get('user')
     if user:
         request.session.pop('user')
@@ -112,10 +111,12 @@ async def logout_request(request: Request) -> RedirectResponse:
             keycloak_url = (
                 f'{settings.keycloak_logout_url}?id_token_hint={urllib.parse.quote_plus(user)}'
             )
-        response = RedirectResponse(keycloak_url, status_code=303)
+        redirect_uri = keycloak_url
     else:
-        response = RedirectResponse(url_abspath_for(request, 'login_page'), status_code=303)
+        redirect_uri = url_abspath_for(request, 'login_page')
 
+    response = RedirectResponse(redirect_uri, status_code=303)
+    # response = do_universal_redirect(request, redirect_uri)
     response.delete_cookie(
         session_manager.cookie_name,
         secure=True,

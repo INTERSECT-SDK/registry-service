@@ -135,7 +135,10 @@ async def add_new_service(
 
 
 def _add_new_service_error(
-    request: Request, csrf_protect: CsrfProtect, service_name: str, server_fault: bool
+    request: Request,
+    csrf_protect: CsrfProtect,
+    service_name: str,
+    server_fault: bool,
 ) -> Response:
     err_ctx = {'err_svc_add': service_name}
     if server_fault:
@@ -155,7 +158,8 @@ def _add_new_service_error(
 
     # No Javascript detected, use the Post-Redirect-Get fallback
     response = RedirectResponse(
-        url_abspath_for(request, 'microservice_user_page', err_ctx), status_code=303
+        url_abspath_for(request, 'microservice_user_page', err_ctx),
+        status_code=303,
     )
     csrf_protect.unset_csrf_cookie(response)
     return response
@@ -189,8 +193,22 @@ async def rotate_service_key(
             logger.exception('Error retrieving service for key rotation: %s', service_name)
             return _rotate_service_key_error(request, csrf_protect, service_name)
 
+        now = datetime.datetime.now(tz=datetime.UTC)
+        if result.brokers:
+            for broker in result.brokers:
+                try:
+                    broker.last_modified = now
+                    broker.broker_password = request.app.state.config_manager.update_service(
+                        service_name,
+                        automatic_update=False,
+                    )
+                    session.add(broker)
+                except Exception:  # noqa: BLE001
+                    # TODO: probably should not silently fail here; however, we should still proceed with at least rotating the API key
+                    logger.exception()
+
         result.api_key = make_api_key()
-        result.last_modified = datetime.datetime.now(tz=datetime.UTC)
+        result.last_modified = now
         session.add(result)
         session.commit()
         session.refresh(result)
@@ -235,7 +253,8 @@ def _service_update_error(
 
     # No Javascript detected, use the Post-Redirect-Get fallback
     response = RedirectResponse(
-        url_abspath_for(request, 'microservice_user_page', err_ctx), status_code=303
+        url_abspath_for(request, 'microservice_user_page', err_ctx),
+        status_code=303,
     )
     csrf_protect.unset_csrf_cookie(response)
     return response
@@ -245,5 +264,8 @@ def _rotate_service_key_error(
     request: Request, csrf_protect: CsrfProtect, service_name: str
 ) -> Response:
     return _service_update_error(
-        request, csrf_protect, service_name, failure_string='Unable to rotate API key'
+        request,
+        csrf_protect,
+        service_name,
+        failure_string='Unable to rotate API key',
     )
