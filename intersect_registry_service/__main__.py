@@ -1,7 +1,11 @@
+from pathlib import Path
+
 import structlog
 import uvicorn
 
-from intersect_registry_service.app.core.configuration_manager import ConfigurationManager
+from intersect_registry_service.app.core.configuration_manager import (
+    ConfigurationManager,
+)
 from intersect_registry_service.app.core.environment import settings
 from intersect_registry_service.app.core.log_config import setup_logging
 from intersect_registry_service.app.core.run_migrations import run_migrations
@@ -10,7 +14,7 @@ logger = structlog.stdlib.get_logger('intersect-registry-service.main')
 
 
 def main() -> None:
-    # WARNING - the logger names will NOT propogate to workers if uvicorn.reload = True or uvicorn.server_workers > 1
+    # WARNING - the logger names will NOT propagate to workers if uvicorn.reload = True or uvicorn.server_workers > 1
     # so we should setup logging twice - once on the uvicorn main, and once in the runner
     setup_logging()
 
@@ -44,11 +48,13 @@ def main() -> None:
     config_manager = ConfigurationManager(settings)
     config_manager.initialize_broker(settings)
 
+    should_reload = not settings.PRODUCTION and settings.SERVER_WORKERS == 1
     uvicorn.run(
         'intersect_registry_service.app.main:app',
         host=host,
         port=settings.SERVER_PORT,
-        reload=(not settings.PRODUCTION and settings.SERVER_WORKERS == 1),
+        reload=should_reload,
+        reload_dirs=str(Path(__file__).parent.absolute()) if should_reload else None,
         workers=settings.SERVER_WORKERS,
         root_path=settings.BASE_URL,
         proxy_headers=settings.PRODUCTION,
