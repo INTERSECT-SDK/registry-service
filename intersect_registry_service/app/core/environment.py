@@ -19,8 +19,7 @@ LogLevel = Literal['CRITICAL', 'FATAL', 'ERROR', 'WARNING', 'WARN', 'INFO', 'DEB
 
 
 def strip_trailing_slash(value: str) -> str:
-    value.rstrip('/')
-    return value
+    return value.rstrip('/')
 
 
 StripTrailingSlash = Annotated[str, BeforeValidator(strip_trailing_slash)]
@@ -174,7 +173,7 @@ class Settings(BaseSettings):
     BROKER_ROOT_USERNAME: str
     BROKER_ROOT_PASSWORD: str
 
-    # These are credentials we use for the "least priviliged users", AKA "clients".
+    # These are credentials we use for the "least privileged users", AKA "clients".
     # TODO - should allow for multiple brokers eventually
     # TODO - we should consider rotating these routinely, which would mean that these should NOT be environment variables.
     BROKER_CLIENT_USERNAME: str
