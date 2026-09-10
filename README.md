@@ -69,7 +69,7 @@ Application runs on port 8000 unless you set `SERVER_PORT`
 
 All environment variables can be checked in `intersect_registry_service/app/core/environment.py`, any class value of `Settings` in SCREAMING_SNAKE_CASE is an environment variable.
 
-- `AUTH_IMPLEMENTATION` can change between `rudimentary` (uses hardcoded users and roles, obviously not suited for production but makes local development a lot easier) or `keycloak` (authenticate against a Keycloak database).
+- `AUTH_IMPLEMENTATION` can change between `rudimentary` (uses hardcoded users and roles, obviously not suited for production but makes local development a lot easier) or `keycloak` (authenticate against a Keycloak database). The `KEYCLOAK_*`, `SCOPE`, `CLIENT_ID`, `CLIENT_SECRET` and `SESSION_FINGERPRINT_COOKIE` variables are only required when this is set to `keycloak`; the application validates all of them at startup and reports every missing variable at once.
 - `DEVELOPMENT_API_KEY` can be set in testing environments to quickly allow for people to test their end-to-end Service/Client logic without having to fiddle with the registry service UI/database/auth-server. Note that this value should NOT be set in ANY instance outside of testing things locally.
 - `SYSTEM_NAME` is the common namespace that all clients/services/core-services share with the message broker. This is important from a "system-of-system" perspective; the eventual intention is that if you wish to make an INTERSECT system-of-system union, you will have to ensure that the SYSTEM_NAME variable of each registry service is unique.
 - Client credentials are currently set via environment variables (and are not stored in the database) but this is subject to change.

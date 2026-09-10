@@ -58,20 +58,6 @@ database is managed by this chart, otherwise the configured external host.
 {{- end -}}
 
 {{/*
-KEYCLOAK_REALM_BASE_URL has no application-side default and must always parse as
-a URL, even when Keycloak is not the active auth implementation. Fall back to an
-unreachable placeholder so "rudimentary" installs do not need a Keycloak.
-*/}}
-{{- define "registry-service.keycloak.realmBaseUrl" -}}
-{{- $url := trim (default "" .Values.auth.keycloak.realmBaseUrl) -}}
-{{- if ne $url "" -}}
-{{- $url -}}
-{{- else -}}
-http://keycloak.invalid/realms/placeholder/protocol/openid-connect
-{{- end -}}
-{{- end -}}
-
-{{/*
 Render one environment variable from a credential block:
   {isSecret, hardcoded, secretName, secretKey}
 Usage: include "registry-service.credentialEnv" (list "ENV_NAME" $cred)
@@ -156,6 +142,12 @@ Usage: include "registry-service.requireCredential" (list "path" $cred)
 {{- end -}}
 {{- if eq (trim (default "" .Values.auth.keycloak.clientId)) "" -}}
 {{- fail "auth.keycloak.clientId is required when auth.implementation=keycloak" -}}
+{{- end -}}
+{{- if eq (trim (default "" .Values.auth.keycloak.scope)) "" -}}
+{{- fail "auth.keycloak.scope is required when auth.implementation=keycloak" -}}
+{{- end -}}
+{{- if eq (trim (default "" .Values.auth.session.fingerprintCookie)) "" -}}
+{{- fail "auth.session.fingerprintCookie is required when auth.implementation=keycloak" -}}
 {{- end -}}
 {{- include "registry-service.requireCredential" (list "auth.keycloak.clientSecret" .Values.auth.keycloak.clientSecret) -}}
 {{- include "registry-service.requireCredential" (list "auth.session.secret" .Values.auth.session.secret) -}}

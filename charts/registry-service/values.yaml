@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/intersect-sdk/registry-service
-  tag: v0.1.0-rc1
+  tag: v0.1.0-rc2
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -87,9 +87,9 @@ auth:
   keycloak:
     # Root URL of the OIDC provider, up to (not including) the endpoint name.
     # e.g. https://keycloak.example.com/realms/intersect/protocol/openid-connect
-    # Required when auth.implementation=keycloak. When auth.implementation is
-    # "rudimentary" and this is empty, the chart injects an unused placeholder
-    # URL because the application always requires the variable to parse.
+    # Required when auth.implementation=keycloak, ignored otherwise. The whole
+    # auth.keycloak block is omitted from the pod when the implementation is
+    # "rudimentary".
     realmBaseUrl: ""
     scope: "openid email"
     clientId: ""

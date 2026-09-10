@@ -96,13 +96,16 @@ spec:
             ### auth ###
             - name: AUTH_IMPLEMENTATION
               value: {{ .Values.auth.implementation | quote }}
+            {{- if eq .Values.auth.implementation "keycloak" }}
             - name: KEYCLOAK_REALM_BASE_URL
-              value: {{ include "registry-service.keycloak.realmBaseUrl" . | quote }}
+              value: {{ .Values.auth.keycloak.realmBaseUrl | quote }}
             - name: SCOPE
               value: {{ .Values.auth.keycloak.scope | quote }}
             - name: CLIENT_ID
               value: {{ .Values.auth.keycloak.clientId | quote }}
             {{- include "registry-service.credentialEnv" (list "CLIENT_SECRET" .Values.auth.keycloak.clientSecret) | nindent 12 }}
+            {{- end }}
+            {{- /* the session cookie is signed regardless of auth implementation */}}
             {{- include "registry-service.credentialEnv" (list "SESSION_SECRET" .Values.auth.session.secret) | nindent 12 }}
             - name: SESSION_FINGERPRINT_COOKIE
               value: {{ .Values.auth.session.fingerprintCookie | quote }}

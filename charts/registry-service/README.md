@@ -13,11 +13,19 @@ Two images are used:
 
 | Component | Default image |
 | --- | --- |
-| Registry service | `ghcr.io/intersect-sdk/registry-service:v0.1.0-rc1` |
+| Registry service | `ghcr.io/intersect-sdk/registry-service:v0.1.0-rc2` |
 | Database | `bitnamilegacy/postgresql:17` |
 
 The database image and its environment variables mirror the `database` service in
 the repository's root `docker-compose.yml`.
+
+### Minimum application version
+
+This chart requires an application image in which the Keycloak settings are only
+required when `AUTH_IMPLEMENTATION=keycloak`. With `auth.implementation=rudimentary`
+the chart renders no `KEYCLOAK_*` variables at all, and an older image rejects that
+at startup with `KEYCLOAK_REALM_BASE_URL Field required`. `v0.1.0-rc1` predates the
+change; use `v0.1.0-rc2` or newer.
 
 ## What this chart does NOT deploy
 
@@ -104,10 +112,11 @@ helm upgrade --install registry ./charts/registry-service \
 - `rudimentary` — hardcoded in-memory users (`admin`/`admin`,
   `username`/`password`). Local development only.
 
-The application always requires `KEYCLOAK_REALM_BASE_URL` to parse as a URL, even
-when it is unused. When `auth.implementation=rudimentary` and
-`auth.keycloak.realmBaseUrl` is empty, the chart injects an unreachable
-placeholder so a rudimentary install does not need a Keycloak.
+The `auth.keycloak.*` values are only rendered into the pod when
+`auth.implementation=keycloak`, so a `rudimentary` install needs no Keycloak
+configuration at all. The chart validates the required Keycloak values at render
+time; the application validates the same set at startup and reports every missing
+variable at once.
 
 When registering the OIDC client, set its redirect URIs to `${BASE_URL}`,
 `${BASE_URL}/login` and `${BASE_URL}/login/callback`.

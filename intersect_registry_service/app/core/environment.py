@@ -1,8 +1,8 @@
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BeforeValidator, Field, HttpUrl, PositiveInt
+from pydantic import BeforeValidator, Field, HttpUrl, PositiveInt, model_validator
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -86,38 +86,53 @@ class Settings(BaseSettings):
 
     ### KEYCLOAK SPECIFIC CONFIG ###
 
-    KEYCLOAK_REALM_BASE_URL: HttpUrl
+    KEYCLOAK_REALM_BASE_URL: HttpUrl | None = None
     """
-    The root URL for the OIDC provider
+    The root URL for the OIDC provider.
+
+    Required when AUTH_IMPLEMENTATION is 'keycloak'; unused otherwise.
     """
+
+    @cached_property
+    def keycloak_realm_base_url(self) -> str:
+        """
+        The root URL for the OIDC provider, without a trailing slash.
+
+        Only meaningful when AUTH_IMPLEMENTATION is 'keycloak' - the model validator guarantees
+        that the variable is set in that case, so nothing which reads this can observe the error.
+        """
+        if self.KEYCLOAK_REALM_BASE_URL is None:
+            msg = 'KEYCLOAK_REALM_BASE_URL is only available when AUTH_IMPLEMENTATION is "keycloak"'
+            raise ValueError(msg)
+        return strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))
 
     @cached_property
     def keycloak_authorize_url(self) -> str:
         """
         Authentication URL From the OIDC provider.
         """
-        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/auth'
+        return f'{self.keycloak_realm_base_url}/auth'
 
     @cached_property
     def keycloak_logout_url(self) -> str:
         """
         Authentication URL From the OIDC provider.
         """
-        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/logout'
+        return f'{self.keycloak_realm_base_url}/logout'
 
     @cached_property
     def keycloak_token_url(self) -> str:
         """
         Token URL From the OIDC provider.
         """
-        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/token'
+        return f'{self.keycloak_realm_base_url}/token'
 
     @cached_property
     def keycloak_jwks_url(self) -> str:
         """
         JWKS URL from OIDC provider. Used for token verification.
         """
-        return f'{strip_trailing_slash(str(self.KEYCLOAK_REALM_BASE_URL))}/certs'
+        return f'{self.keycloak_realm_base_url}/certs'
 
     SCOPE: str = ''
     """
@@ -215,6 +230,34 @@ class Settings(BaseSettings):
 
     It's plausible that we may not be able to autorun migrations ourselves, in which case this can safely be set to False.
     """
+
+    @model_validator(mode='after')
+    def check_auth_implementation_variables(self) -> Self:
+        """Enforce the variables which only one AUTH_IMPLEMENTATION needs.
+
+        These have no usable default and are fatal to the Keycloak login flow when missing, but are
+        never read under the 'rudimentary' implementation. Checking them here means a misconfigured
+        deployment fails immediately with a list of what to set, instead of starting up and only
+        breaking once a user tries to log in.
+        """
+        if self.AUTH_IMPLEMENTATION != 'keycloak':
+            return self
+        missing = [
+            name
+            for name, value in (
+                ('KEYCLOAK_REALM_BASE_URL', self.KEYCLOAK_REALM_BASE_URL),
+                ('SCOPE', self.SCOPE),
+                ('CLIENT_ID', self.CLIENT_ID),
+                ('CLIENT_SECRET', self.CLIENT_SECRET),
+                ('SESSION_SECRET', self.SESSION_SECRET),
+                ('SESSION_FINGERPRINT_COOKIE', self.SESSION_FINGERPRINT_COOKIE),
+            )
+            if not value
+        ]
+        if missing:
+            msg = f'AUTH_IMPLEMENTATION="keycloak" requires these variables to be set: {", ".join(missing)}'
+            raise ValueError(msg)
+        return self
 
     # pydantic config, NOT an environment variable
     model_config = SettingsConfigDict(
