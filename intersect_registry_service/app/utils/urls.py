@@ -47,7 +47,9 @@ def absolute_url_for(request: Request, name: str) -> URL | None:
     if not forwarded_proto or not forwarded_host:
         # You can ignore this if you are not actually behind a proxy, otherwise you should assume this is a misconfiguration on your proxy's end
         logger.error(
-            'Proxy did not set both X-Forwarded-Proto and X-Forwarded-Host. X-Forwarded-Proto value = %s X-Forwarded-Host value = %s'
+            'Proxy did not set both X-Forwarded-Proto and X-Forwarded-Host. X-Forwarded-Proto value = %s X-Forwarded-Host value = %s',
+            forwarded_proto,
+            forwarded_host,
         )
         return None
     return URL(
