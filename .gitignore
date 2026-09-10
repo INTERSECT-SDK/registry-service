@@ -509,3 +509,6 @@ $RECYCLE.BIN/
 .idea
 
 .pdm-python
+
+# local clones of reference repositories
+repos/

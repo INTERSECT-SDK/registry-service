@@ -1,0 +1,174 @@
+{{- include "registry-service.validations" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "registry-service.fullname" . }}
+  labels:
+    {{- include "registry-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "registry-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: registry
+  template:
+    metadata:
+      labels:
+        {{- include "registry-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: registry
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.postgresql.enabled .Values.postgresql.waitForDatabase }}
+      initContainers:
+        # The application runs alembic migrations before binding its port, so a
+        # database that is not up yet turns into a pod crash loop.
+        - name: wait-for-database
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          {{- with .Values.postgresql.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h "$POSTGRESQL_HOST" -p "$POSTGRESQL_PORT" -U "$POSTGRESQL_USERNAME" -d "$POSTGRESQL_DATABASE"; do
+                echo "waiting for ${POSTGRESQL_HOST}:${POSTGRESQL_PORT}"
+                sleep 2
+              done
+          env:
+            - name: POSTGRESQL_HOST
+              value: {{ include "registry-service.postgresql.host" . | quote }}
+            - name: POSTGRESQL_PORT
+              value: {{ include "registry-service.postgresql.port" . | quote }}
+            - name: POSTGRESQL_USERNAME
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRESQL_DATABASE
+              value: {{ .Values.postgresql.auth.database | quote }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      {{- end }}
+      containers:
+        - name: {{ include "registry-service.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            ### generic app config ###
+            - name: PRODUCTION
+              value: {{ .Values.app.production | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.app.logLevel | quote }}
+            - name: BASE_URL
+              value: {{ .Values.app.baseUrl | quote }}
+            - name: SERVER_PORT
+              value: {{ .Values.app.serverPort | quote }}
+            - name: SERVER_WORKERS
+              value: {{ .Values.app.serverWorkers | quote }}
+            {{- include "registry-service.credentialEnv" (list "SECRET_NAME" .Values.app.secretName) | nindent 12 }}
+            {{- include "registry-service.credentialEnv" (list "DEVELOPMENT_API_KEY" .Values.app.developmentApiKey) | nindent 12 }}
+            - name: ALEMBIC_RUN_MIGRATIONS
+              value: {{ .Values.app.runMigrations | quote }}
+
+            ### auth ###
+            - name: AUTH_IMPLEMENTATION
+              value: {{ .Values.auth.implementation | quote }}
+            {{- if eq .Values.auth.implementation "keycloak" }}
+            - name: KEYCLOAK_REALM_BASE_URL
+              value: {{ .Values.auth.keycloak.realmBaseUrl | quote }}
+            - name: SCOPE
+              value: {{ .Values.auth.keycloak.scope | quote }}
+            - name: CLIENT_ID
+              value: {{ .Values.auth.keycloak.clientId | quote }}
+            {{- include "registry-service.credentialEnv" (list "CLIENT_SECRET" .Values.auth.keycloak.clientSecret) | nindent 12 }}
+            {{- end }}
+            {{- /* the session cookie is signed regardless of auth implementation */}}
+            {{- include "registry-service.credentialEnv" (list "SESSION_SECRET" .Values.auth.session.secret) | nindent 12 }}
+            - name: SESSION_FINGERPRINT_COOKIE
+              value: {{ .Values.auth.session.fingerprintCookie | quote }}
+            - name: SESSION_MAX_AGE
+              value: {{ .Values.auth.session.maxAge | quote }}
+
+            ### INTERSECT ###
+            - name: SYSTEM_NAME
+              value: {{ .Values.app.systemName | quote }}
+
+            ### broker ###
+            - name: BROKER_HOST
+              value: {{ .Values.broker.host | quote }}
+            - name: BROKER_PORT
+              value: {{ .Values.broker.port | quote }}
+            - name: BROKER_PROTOCOL
+              value: {{ .Values.broker.protocol | quote }}
+            - name: BROKER_APPLICATION
+              value: {{ .Values.broker.application | quote }}
+            {{- if .Values.broker.tlsCert }}
+            - name: BROKER_TLS_CERT
+              value: {{ .Values.broker.tlsCert | quote }}
+            {{- end }}
+            - name: BROKER_MANAGEMENT_URI
+              value: {{ .Values.broker.managementUri | quote }}
+            - name: BROKER_ROOT_USERNAME
+              value: {{ .Values.broker.root.username | quote }}
+            {{- include "registry-service.credentialEnv" (list "BROKER_ROOT_PASSWORD" .Values.broker.root.password) | nindent 12 }}
+            - name: BROKER_CLIENT_USERNAME
+              value: {{ .Values.broker.client.username | quote }}
+            {{- include "registry-service.credentialEnv" (list "BROKER_CLIENT_PASSWORD" .Values.broker.client.password) | nindent 12 }}
+            {{- include "registry-service.credentialEnv" (list "BROKER_CLIENT_API_KEY" .Values.broker.client.apiKey) | nindent 12 }}
+
+            ### database ###
+            - name: POSTGRESQL_HOST
+              value: {{ include "registry-service.postgresql.host" . | quote }}
+            - name: POSTGRESQL_PORT
+              value: {{ include "registry-service.postgresql.port" . | quote }}
+            - name: POSTGRESQL_USERNAME
+              value: {{ .Values.postgresql.auth.username | quote }}
+            {{- include "registry-service.credentialEnv" (list "POSTGRESQL_PASSWORD" .Values.postgresql.auth.password) | nindent 12 }}
+            - name: POSTGRESQL_DATABASE
+              value: {{ .Values.postgresql.auth.database | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.app.serverPort }}
+              protocol: TCP
+          # /api/v1/ping does not touch the database, /api/v1/healthcheck does.
+          # Probes bypass the proxy, so they use the unprefixed paths that the
+          # proxy would forward after stripping app.baseUrl.
+          livenessProbe:
+            httpGet:
+              path: /api/v1/ping
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/v1/healthcheck
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
