@@ -159,3 +159,18 @@ server {
 ```
 
 These are needed to provide Keycloak with the URLs which redirect back to the Registry Service.
+
+### Kubernetes / Helm
+
+A Helm chart is provided in [`charts/registry-service`](charts/registry-service). It deploys the
+registry service and, optionally, its PostgreSQL database. The message broker and Keycloak are
+expected to already exist and are configured by value.
+
+```bash
+helm upgrade --install registry ./charts/registry-service \
+  -n intersect-registry --create-namespace \
+  -f ./charts/registry-service/examples/values-no-existing-secret.yaml
+```
+
+See the [chart README](charts/registry-service/README.md) for the full list of values, the
+credential pattern for sourcing secrets from a Kubernetes `Secret`, and subpath/ingress setup.

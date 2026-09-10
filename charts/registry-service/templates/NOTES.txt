@@ -1,0 +1,43 @@
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.hostname }}
+Registry service ingress is enabled.
+
+Access URL:
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}{{ .Values.ingress.path }}
+{{- else }}
+Registry service ingress is enabled.
+
+No ingress hostname is set; inspect your ingress object for host/path routing details:
+  kubectl get ingress {{ include "registry-service.fullname" . }} -o yaml
+{{- end }}
+{{- else if eq .Values.service.type "LoadBalancer" }}
+Service type is LoadBalancer.
+
+Get external address:
+  kubectl get svc {{ include "registry-service.fullname" . }}
+{{- else if eq .Values.service.type "NodePort" }}
+Service type is NodePort.
+
+Get node port:
+  kubectl get svc {{ include "registry-service.fullname" . }} -o jsonpath='{.spec.ports[0].nodePort}'
+{{- else }}
+To access the registry service locally, run:
+  kubectl port-forward svc/{{ include "registry-service.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+
+Then open:
+  http://127.0.0.1:{{ .Values.service.port }}{{ .Values.app.baseUrl }}/api/docs
+{{- end }}
+
+Auth implementation: {{ .Values.auth.implementation }}
+Database: {{ if .Values.postgresql.enabled }}in-release StatefulSet ({{ include "registry-service.postgresql.serviceName" . }}){{ else }}external ({{ .Values.postgresql.external.host }}:{{ .Values.postgresql.external.port }}){{ end }}
+Broker: {{ .Values.broker.host }}:{{ .Values.broker.port }} ({{ .Values.broker.protocol }} via {{ .Values.broker.application }})
+{{ if eq .Values.auth.implementation "rudimentary" }}
+WARNING: auth.implementation=rudimentary uses hardcoded users (admin/admin, username/password).
+Use auth.implementation=keycloak for anything beyond local development.
+{{- end }}
+{{- if not .Values.app.developmentApiKey.isSecret }}
+{{- if .Values.app.developmentApiKey.hardcoded }}
+WARNING: app.developmentApiKey is set. Broker ACLs and API key checks are DISABLED.
+Do not use this on any deployment reachable outside your control.
+{{- end }}
+{{- end }}

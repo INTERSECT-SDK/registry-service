@@ -1,0 +1,180 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/intersect-sdk/registry-service
+  tag: v0.1.0-rc1
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+# The application image is distroless and already runs as a non-root user.
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8000
+  nodePort: ""
+  clusterIP: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  externalTrafficPolicy: Cluster
+  annotations: {}
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+
+ingress:
+  enabled: false
+  pathType: ImplementationSpecific
+  hostname: ""
+  ingressClassName: ""
+  path: /
+  annotations: {}
+  tls: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+  extraRules: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+app:
+  # PRODUCTION=true binds to 0.0.0.0, emits JSON logs, and trusts proxy headers.
+  # This must stay true for in-cluster deployments.
+  production: true
+  logLevel: INFO
+  # Proxy subpath (path component only, no scheme/host). Set this to the same
+  # value as ingress.path when serving the app under a subpath.
+  baseUrl: ""
+  # Port the application listens on inside the container.
+  serverPort: 8000
+  # Uvicorn workers per pod. Prefer scaling replicaCount instead.
+  serverWorkers: 1
+  # Must match [a-z0-9][-a-z0-9]{2,62} - shared with every INTERSECT client/service.
+  systemName: intersect-registry-system
+  # SECRET_NAME - registry service internal secret, minimum 16 characters.
+  # Required. Never share this value.
+  secretName:
+    isSecret: false
+    hardcoded: ""
+    secretName: ""
+    secretKey: ""
+  # DEVELOPMENT_API_KEY - leave empty for any deployment reachable outside your
+  # control. Setting it disables broker ACLs and API key checks entirely.
+  developmentApiKey:
+    isSecret: false
+    hardcoded: ""
+    secretName: ""
+    secretKey: ""
+  # ALEMBIC_RUN_MIGRATIONS - run outstanding migrations on startup.
+  runMigrations: true
+
+auth:
+  # "keycloak" for real deployments, "rudimentary" for hardcoded dev users.
+  implementation: keycloak
+  keycloak:
+    # Root URL of the OIDC provider, up to (not including) the endpoint name.
+    # e.g. https://keycloak.example.com/realms/intersect/protocol/openid-connect
+    # Required when auth.implementation=keycloak. When auth.implementation is
+    # "rudimentary" and this is empty, the chart injects an unused placeholder
+    # URL because the application always requires the variable to parse.
+    realmBaseUrl: ""
+    scope: "openid email"
+    clientId: ""
+    clientSecret:
+      isSecret: false
+      hardcoded: ""
+      secretName: ""
+      secretKey: ""
+  session:
+    # Signing key for the session cookie. Required when
+    # auth.implementation=keycloak. Use a random 32/64 character string.
+    secret:
+      isSecret: false
+      hardcoded: ""
+      secretName: ""
+      secretKey: ""
+    fingerprintCookie: registry__Secure_Fgp
+    maxAge: 604800
+
+# The message broker is NOT deployed by this chart - point it at an existing
+# RabbitMQ instance.
+broker:
+  host: ""
+  port: 5672
+  protocol: amqp0.9.1
+  application: rabbitmq
+  # Path to a CA cert inside the container. Setting this switches the broker
+  # URI scheme to amqps/mqtts, so leave it empty unless you also mount the file.
+  tlsCert: ""
+  # Scheme, host/port and path of the RabbitMQ management UI, no userinfo.
+  # e.g. http://rabbitmq:15672/
+  managementUri: ""
+  # Root broker credentials. Never exposed to SDK clients.
+  root:
+    username: intersect_username
+    password:
+      isSecret: false
+      hardcoded: ""
+      secretName: ""
+      secretKey: ""
+  # Least-privileged shared "client" credentials handed to SDK clients.
+  client:
+    username: lackey
+    password:
+      isSecret: false
+      hardcoded: ""
+      secretName: ""
+      secretKey: ""
+    apiKey:
+      isSecret: false
+      hardcoded: ""
+      secretName: ""
+      secretKey: ""
+
+postgresql:
+  # true deploys the PostgreSQL StatefulSet + Service in this release.
+  # false points the application at postgresql.external instead.
+  enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: "17"
+    pullPolicy: IfNotPresent
+  auth:
+    username: registry_username
+    password:
+      isSecret: false
+      hardcoded: ""
+      secretName: ""
+      secretKey: ""
+    database: registry
+  # Only used when postgresql.enabled=false.
+  external:
+    host: ""
+    port: 5432
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: ""
+  resources: {}
+  # The bitnami PostgreSQL image runs as uid/gid 1001.
+  podSecurityContext:
+    fsGroup: 1001
+  securityContext:
+    runAsUser: 1001
+    runAsNonRoot: true
+  # Block application startup until the database accepts connections. The app
+  # runs migrations before serving traffic, so this avoids a startup crash loop.
+  waitForDatabase: true
