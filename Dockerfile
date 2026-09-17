@@ -3,8 +3,10 @@
 FROM --platform=$BUILDPLATFORM ghcr.io/astral-sh/uv:debian-slim AS builder
 
 ARG PYTHON_VERSION=3.13
-# set to "0" to include dev dependencies, "1" to exclude them (default: "1")
+# set UV_NO_DEV arg to empty string to include dev dependencies
 ARG UV_NO_DEV="1"
+
+# --------------------- #
 
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
@@ -18,16 +20,16 @@ WORKDIR /app
 
 # Install (required) dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-install-project --no-editable
+	--mount=type=bind,source=uv.lock,target=uv.lock \
+	--mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+	uv sync --locked --no-install-project --no-editable
 
 # Sync the project
 COPY intersect_registry_service intersect_registry_service
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-editable
+	--mount=type=bind,source=uv.lock,target=uv.lock \
+	--mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+	uv sync --locked --no-editable
 
 FROM --platform=$BUILDPLATFORM gcr.io/distroless/cc:nonroot AS runner
 
@@ -45,5 +47,4 @@ COPY alembic.ini alembic.ini
 ENV ROOT_DIR="/app"
 
 # override CMD at container runtime for tests
-# note that you generally will NOT want to set UVICORN_WORKERS if running in a Kubernetes cluster, let Kubernetes handle that for you
 CMD ["python", "-m", "intersect_registry_service"]
