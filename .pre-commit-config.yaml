@@ -2,16 +2,16 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-    - id: check-yaml
-      args: ['--unsafe']
-    - id: check-toml
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
+      - id: check-yaml
+        args: ["--unsafe"]
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.11
     hooks:
       - id: ruff
-        args: [ --fix ]
+        args: [--fix]
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.6.11
@@ -23,13 +23,13 @@ repos:
       - id: mypy
         name: MyPy
         description: use MyPy for static type checking
-        entry: pdm run mypy intersect_registry_service
+        entry: uv run mypy intersect_registry_service
         pass_filenames: false
         language: system
   - repo: https://github.com/codespell-project/codespell
     # Configuration for codespell is in pyproject.toml
     rev: v2.3.0
     hooks:
-    - id: codespell
-      additional_dependencies:
-      - tomli
+      - id: codespell
+        additional_dependencies:
+          - tomli
