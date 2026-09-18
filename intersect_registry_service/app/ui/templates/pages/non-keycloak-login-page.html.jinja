@@ -1,4 +1,4 @@
-{% extends 'layout.jinja' %}
+{% extends 'layout.html.jinja' %}
 {% block subtitle %}Login{% endblock %}
 
 {% block content %}
@@ -6,7 +6,7 @@
 <div class="prominent-form-wrapper">
   <form action="login" method="post" class="prominent-form" hx-disabled-elt="find button" hx-boost="false">
     <span id="login-form-errors">
-      {% include 'login-page-error-partial.jinja' %}
+      {% include 'login-page-error-partial.html.jinja' %}
     </span>
     <label for="username"> Username</label>
     <input type="text" id="login-username" name="username" placeholder="Enter your Username" value="{{username}}"

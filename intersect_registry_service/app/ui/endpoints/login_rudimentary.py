@@ -31,7 +31,7 @@ async def login_page(
     headers = get_html_security_headers(nonce)
     response = TEMPLATES.TemplateResponse(
         request=request,
-        name='non-keycloak-login-page.jinja',
+        name='non-keycloak-login-page.html.jinja',
         context={
             'nonce': nonce,
             'csrf_token': csrf_token,
@@ -65,7 +65,7 @@ async def login_request(
         if is_htmx_request(request):
             return TEMPLATES.TemplateResponse(
                 request=request,
-                name='login-page-error-partial.jinja',
+                name='login-page-error-partial.html.jinja',
                 context=err_ctx,
                 headers={
                     'HX-Retarget': '#login-form-errors',

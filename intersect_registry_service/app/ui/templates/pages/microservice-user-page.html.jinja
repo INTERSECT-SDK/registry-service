@@ -1,4 +1,4 @@
-{% extends 'user-layout.jinja' %}
+{% extends 'user-layout.html.jinja' %}
 {% block subtitle %}Manage Service Information{% endblock %}
 
 {% block content %}
@@ -29,7 +29,7 @@
         title="lowercase letters, numbers, and hyphens only, from 3 to 63 characters" />
       <input type="hidden" name="csrf-token" value="{{ csrf_token }}" />
       <button type="submit">Submit request</button>
-      {% include 'service-submit-error-partial.jinja' %}
+      {% include 'service-submit-error-partial.html.jinja' %}
     </form>
   </div>
 </div>
@@ -48,7 +48,7 @@
       </tr>
     </thead>
     <tbody>
-      {% include 'service-list-partial.jinja' %}
+      {% include 'service-list-partial.html.jinja' %}
     </tbody>
   </table>
 </div>

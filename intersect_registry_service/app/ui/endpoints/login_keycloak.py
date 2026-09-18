@@ -90,7 +90,7 @@ async def login_page(
     headers = get_html_security_headers(nonce)
     return TEMPLATES.TemplateResponse(
         request=request,
-        name='keycloak-login-page.jinja',
+        name='keycloak-login-page.html.jinja',
         context={
             'nonce': nonce,
         },

@@ -51,7 +51,7 @@ async def microservice_user_page(
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     response = TEMPLATES.TemplateResponse(
         request=request,
-        name='microservice-user-page.jinja',
+        name='microservice-user-page.html.jinja',
         context={
             'nonce': nonce,
             'csrf_token': csrf_token,
@@ -121,7 +121,7 @@ async def add_new_service(
         # Javascript is enabled, so we can return an HTML partial
         return TEMPLATES.TemplateResponse(
             request=request,
-            name='service-list-partial-oob.jinja',
+            name='service-list-partial-oob.html.jinja',
             context={
                 'csrf_token': csrf_token,
                 'services': [new_service],
@@ -148,7 +148,7 @@ def _add_new_service_error(
         # we are now REPLACING the error LAST CHILD of the FORM, instead of APPENDING as the FIRST CHILD of the TABLE BODY
         return TEMPLATES.TemplateResponse(
             request=request,
-            name='service-submit-error-partial.jinja',
+            name='service-submit-error-partial.html.jinja',
             context=err_ctx,
             headers={
                 'HX-Reswap': 'innerHTML',
@@ -217,7 +217,7 @@ async def rotate_service_key(
         # Javascript is enabled, so we can return an HTML partial
         return TEMPLATES.TemplateResponse(
             request=request,
-            name='service-list-partial-oob.jinja',
+            name='service-list-partial-oob.html.jinja',
             context={
                 'csrf_token': csrf_token,
                 'services': [result],
@@ -243,7 +243,7 @@ def _service_update_error(
         err_ctx['service_name'] = service_name
         return TEMPLATES.TemplateResponse(
             request=request,
-            name='service-update-error-partial.jinja',
+            name='service-update-error-partial.html.jinja',
             context=err_ctx,
             headers={
                 'HX-Reswap': 'outerHTML',
