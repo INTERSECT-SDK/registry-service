@@ -149,7 +149,7 @@ postgresql:
   # false points the application at postgresql.external instead.
   enabled: true
   image:
-    repository: bitnamilegacy/postgresql
+    repository: soldevelo/postgresql
     tag: "17"
     pullPolicy: IfNotPresent
   auth:
